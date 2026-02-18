@@ -96,13 +96,13 @@ function buildAbsoluteMediaUrl(value: string): string {
 
 function buildBilingualCaption(template: ScheduledTemplateRow): string {
   const weekday = template.weekday_key;
-  const englishLines: string[] = [`${DAY_NAMES_EN[weekday]} Specials`, ""];
-  const frenchLines: string[] = [`Promotions du ${DAY_NAMES_FR[weekday]}`, ""];
+  const englishLines: string[] = [DAY_NAMES_EN[weekday], ""];
+  const frenchLines: string[] = [DAY_NAMES_FR[weekday], ""];
 
   if (template.is_daily_special) {
     englishLines.push(`Daily Special: ${template.title_en} - $10.44`);
     englishLines.push("");
-    frenchLines.push(`Special du jour: ${template.title_fr} - 10,44 $`);
+    frenchLines.push(`Spécial du jour: ${template.title_fr} - 10,44 $`);
     frenchLines.push("");
   }
 
@@ -112,7 +112,7 @@ function buildBilingualCaption(template: ScheduledTemplateRow): string {
 
   frenchLines.push("Promotions quotidiennes:");
   frenchLines.push('- Pizza 9" de votre choix + breuvage 355ml - 10,44 $');
-  frenchLines.push("- BLT ou Burger dejeuner: 1 pour 4,99 $ | 2 pour 8,00 $");
+  frenchLines.push("- BLT ou Burger déjeuner: 1 pour 4,99 $ | 2 pour 8,00 $");
 
   if (weekday === "wednesday" || weekday === "thursday" || weekday === "friday") {
     englishLines.push('- 2-for-1 14" Pepperoni & Cheese Pizza - $22.61');
