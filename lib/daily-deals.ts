@@ -94,32 +94,38 @@ function buildAbsoluteMediaUrl(value: string): string {
   return `${base}${path}`;
 }
 
-function buildBilingualCaption(template: ScheduledTemplateRow, runDate: string): string {
+function buildBilingualCaption(template: ScheduledTemplateRow): string {
   const weekday = template.weekday_key;
-  const lines: string[] = [
-    `${DAY_NAMES_EN[weekday]} / ${DAY_NAMES_FR[weekday]} - ${runDate}`,
-    "",
-  ];
+  const englishLines: string[] = [`${DAY_NAMES_EN[weekday]} Specials`, ""];
+  const frenchLines: string[] = [`Promotions du ${DAY_NAMES_FR[weekday]}`, ""];
 
   if (template.is_daily_special) {
-    lines.push(`Daily Special / Spécial du jour: ${template.title_en} / ${template.title_fr} - $10.44`);
-    lines.push("");
+    englishLines.push(`Daily Special: ${template.title_en} - $10.44`);
+    englishLines.push("");
+    frenchLines.push(`Special du jour: ${template.title_fr} - 10,44 $`);
+    frenchLines.push("");
   }
 
-  lines.push("Everyday Deals / Promotions quotidiennes:");
-  lines.push('- 9" Pizza of Your Choice + 355ml beverage - $10.44');
-  lines.push('- Pizza 9" de votre choix + breuvage 355ml - 10,44 $');
-  lines.push("- BLT or Breakfast Burger: 1 for $4.99 | 2 for $8.00");
-  lines.push("- BLT ou Burger déjeuner: 1 pour 4,99 $ | 2 pour 8,00 $");
+  englishLines.push("Everyday Deals:");
+  englishLines.push('- 9" Pizza of Your Choice + 355ml beverage - $10.44');
+  englishLines.push("- BLT or Breakfast Burger: 1 for $4.99 | 2 for $8.00");
+
+  frenchLines.push("Promotions quotidiennes:");
+  frenchLines.push('- Pizza 9" de votre choix + breuvage 355ml - 10,44 $');
+  frenchLines.push("- BLT ou Burger dejeuner: 1 pour 4,99 $ | 2 pour 8,00 $");
 
   if (weekday === "wednesday" || weekday === "thursday" || weekday === "friday") {
-    lines.push('- 2-for-1 14" Pepperoni & Cheese Pizza - $22.61');
-    lines.push('- 2 pour 1 pizza pepperoni et fromage 14" - 22,61 $');
+    englishLines.push('- 2-for-1 14" Pepperoni & Cheese Pizza - $22.61');
+    frenchLines.push('- 2 pour 1 pizza pepperoni et fromage 14" - 22,61 $');
   }
 
-  lines.push("");
-  lines.push("Call to order today. / Appelez pour commander aujourd'hui.");
-  return lines.join("\n");
+  englishLines.push("");
+  englishLines.push("Call to order today.");
+
+  frenchLines.push("");
+  frenchLines.push("Appelez pour commander aujourd'hui.");
+
+  return [...englishLines, "", ...frenchLines].join("\n");
 }
 
 export function getRunDateForNow(now = new Date()): string {
@@ -149,7 +155,7 @@ export async function buildScheduledPostPayload(dateKey: string): Promise<Schedu
     run_date: dateKey,
     weekday_key: template.weekday_key,
     media_urls: mediaUrls,
-    caption: buildBilingualCaption(template, dateKey),
+    caption: buildBilingualCaption(template),
     template,
   };
 }
