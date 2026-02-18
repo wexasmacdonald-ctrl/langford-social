@@ -100,7 +100,7 @@ function buildBilingualCaption(template: ScheduledTemplateRow): string {
   const frenchLines: string[] = [DAY_NAMES_FR[weekday], ""];
 
   if (template.is_daily_special) {
-    englishLines.push(`Daily Special: ${template.title_en} - $10.44`);
+    englishLines.push(`${DAY_NAMES_EN[weekday]} Special: ${template.title_en} - $10.44`);
     englishLines.push("");
     frenchLines.push(`Spécial du jour: ${template.title_fr} - 10,44 $`);
     frenchLines.push("");
