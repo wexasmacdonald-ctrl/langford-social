@@ -13,6 +13,12 @@ type RunsResponse = {
   runs: PublishRunRow[];
 };
 
+type ClearRunResponse = {
+  ok: boolean;
+  run_date: string;
+  deleted: boolean;
+};
+
 type ErrorResponse = {
   error?: {
     message?: string;
@@ -64,6 +70,7 @@ export default function AdminPage() {
   const [isLoadingRuns, setIsLoadingRuns] = useState(false);
   const [isPublishingDate, setIsPublishingDate] = useState(false);
   const [isPublishingToday, setIsPublishingToday] = useState(false);
+  const [isClearingRun, setIsClearingRun] = useState(false);
 
   const previewHeader = useMemo(() => {
     if (!preview) return "No preview loaded";
@@ -187,6 +194,34 @@ export default function AdminPage() {
     }
   }
 
+  async function clearRunForDate() {
+    setIsClearingRun(true);
+    setStatusMessage("");
+    try {
+      const params = new URLSearchParams({ date: simulationDate });
+      const response = await fetch(`/api/publish-runs?${params.toString()}`, {
+        method: "DELETE",
+        headers: buildHeaders(),
+      });
+      const data = (await response.json()) as ClearRunResponse & ErrorResponse;
+      if (!response.ok) {
+        throw new Error(data.error?.message ?? "Failed to clear run lock");
+      }
+
+      setStatusMessage(
+        data.deleted
+          ? `Cleared run lock for ${simulationDate}.`
+          : `No run lock found for ${simulationDate}.`,
+      );
+      await Promise.all([loadPublishRuns(), loadPreview(simulationDate)]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to clear run lock";
+      setStatusMessage(message);
+    } finally {
+      setIsClearingRun(false);
+    }
+  }
+
   useEffect(() => {
     void Promise.all([loadPreview(simulationDate), loadPublishRuns(), loadRuntimeStatus()]);
   }, []);
@@ -255,6 +290,9 @@ export default function AdminPage() {
           </button>
           <button type="button" disabled={isPublishingToday} onClick={() => void runPublishToday()}>
             {isPublishingToday ? "Publishing..." : "Publish Today Now"}
+          </button>
+          <button type="button" disabled={isClearingRun} onClick={() => void clearRunForDate()}>
+            {isClearingRun ? "Clearing..." : "Clear Selected Date Lock"}
           </button>
           <button type="button" disabled={isLoadingRuns} onClick={() => void loadPublishRuns()}>
             {isLoadingRuns ? "Refreshing..." : "Refresh Run History"}

@@ -186,6 +186,17 @@ export async function getPublishRunByDate(runDate: string): Promise<PublishRunRo
   return row ? normalizePublishRunRow(row) : null;
 }
 
+export async function deletePublishRunByDate(runDate: string): Promise<boolean> {
+  await ensureSchemaExtensions();
+  const sql = getSql();
+  const rows = await sql`
+    DELETE FROM publish_runs
+    WHERE run_date = ${runDate}
+    RETURNING id
+  `;
+  return rows.length > 0;
+}
+
 export async function upsertPublishRun(input: {
   runDate: string;
   weekdayKey: WeekdayKey;
