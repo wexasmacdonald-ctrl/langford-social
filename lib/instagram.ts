@@ -1,0 +1,118 @@
+import { getInstagramEnv } from "@/lib/env";
+
+type GraphApiError = {
+  error?: {
+    message?: string;
+    type?: string;
+    code?: number;
+  };
+};
+
+type MediaCreateResponse = {
+  id: string;
+} & GraphApiError;
+
+type MediaPublishResponse = {
+  id: string;
+} & GraphApiError;
+
+function extractGraphError(payload: GraphApiError): string {
+  return payload.error?.message ?? "Instagram Graph API request failed";
+}
+
+export async function createMediaContainer(imageUrl: string, caption?: string): Promise<string> {
+  const env = getInstagramEnv();
+  const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.IG_USER_ID}/media`;
+
+  const body = new URLSearchParams({
+    image_url: imageUrl,
+    caption: caption ?? "",
+    is_published: "false",
+    access_token: env.IG_ACCESS_TOKEN,
+  });
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  const payload = (await response.json()) as MediaCreateResponse;
+  if (!response.ok || !payload.id) {
+    throw new Error(extractGraphError(payload));
+  }
+
+  return payload.id;
+}
+
+export async function createCarouselItemContainer(imageUrl: string): Promise<string> {
+  const env = getInstagramEnv();
+  const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.IG_USER_ID}/media`;
+
+  const body = new URLSearchParams({
+    image_url: imageUrl,
+    is_carousel_item: "true",
+    access_token: env.IG_ACCESS_TOKEN,
+  });
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  const payload = (await response.json()) as MediaCreateResponse;
+  if (!response.ok || !payload.id) {
+    throw new Error(extractGraphError(payload));
+  }
+
+  return payload.id;
+}
+
+export async function createCarouselContainer(childIds: string[], caption?: string): Promise<string> {
+  const env = getInstagramEnv();
+  const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.IG_USER_ID}/media`;
+
+  const body = new URLSearchParams({
+    media_type: "CAROUSEL",
+    children: childIds.join(","),
+    caption: caption ?? "",
+    access_token: env.IG_ACCESS_TOKEN,
+  });
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  const payload = (await response.json()) as MediaCreateResponse;
+  if (!response.ok || !payload.id) {
+    throw new Error(extractGraphError(payload));
+  }
+
+  return payload.id;
+}
+
+export async function publishMediaContainer(creationId: string): Promise<string> {
+  const env = getInstagramEnv();
+  const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.IG_USER_ID}/media_publish`;
+
+  const body = new URLSearchParams({
+    creation_id: creationId,
+    access_token: env.IG_ACCESS_TOKEN,
+  });
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+
+  const payload = (await response.json()) as MediaPublishResponse;
+  if (!response.ok || !payload.id) {
+    throw new Error(extractGraphError(payload));
+  }
+
+  return payload.id;
+}
