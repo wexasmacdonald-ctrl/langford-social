@@ -112,19 +112,10 @@ function buildBilingualCaption(template: ScheduledTemplateRow): string {
   }
 
   englishLines.push("Everyday Deals:");
-  englishLines.push("- Any featured specials menu item + 355ml drink - $10.44");
   englishLines.push('- 9" Pizza of Your Choice + 355ml beverage - $10.44');
-  englishLines.push("- BLT or Breakfast Burger: 1 for $4.99 | 2 for $8.00");
 
   frenchLines.push("Promotions quotidiennes:");
-  frenchLines.push("- Tout item vedette du menu spécial + breuvage 355ml - 10,44 $");
   frenchLines.push('- Pizza 9" de votre choix + breuvage 355ml - 10,44 $');
-  frenchLines.push("- BLT ou Burger déjeuner: 1 pour 4,99 $ | 2 pour 8,00 $");
-
-  if (weekday === "wednesday" || weekday === "thursday" || weekday === "friday") {
-    englishLines.push('- 2-for-1 14" Pepperoni & Cheese Pizza - $22.61');
-    frenchLines.push('- 2 pour 1 pizza pepperoni et fromage 14" - 22,61 $');
-  }
 
   englishLines.push("");
   englishLines.push("Call for pickup (+1 819-647-2933)");
