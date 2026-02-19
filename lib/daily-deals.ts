@@ -105,14 +105,14 @@ function buildBilingualCaption(template: ScheduledTemplateRow): string {
   const frenchLines: string[] = [frenchHeader, ""];
 
   if (template.is_daily_special) {
-    englishLines.push(`${template.title_en} - $10.44`);
+    englishLines.push(`${template.title_en} + 355ml drink - $10.44`);
     englishLines.push("");
-    frenchLines.push(`${template.title_fr} - 10,44 $`);
+    frenchLines.push(`${template.title_fr} + breuvage 355ml - 10,44 $`);
     frenchLines.push("");
   }
 
   englishLines.push("Everyday Deals:");
-  englishLines.push('- 9" Pizza of Your Choice + 355ml beverage - $10.44');
+  englishLines.push('- 9" Pizza of Your Choice + 355ml drink - $10.44');
 
   frenchLines.push("Promotions quotidiennes:");
   frenchLines.push('- Pizza 9" de votre choix + breuvage 355ml - 10,44 $');
