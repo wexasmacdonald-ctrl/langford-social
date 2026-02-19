@@ -96,13 +96,18 @@ function buildAbsoluteMediaUrl(value: string): string {
 
 function buildBilingualCaption(template: ScheduledTemplateRow): string {
   const weekday = template.weekday_key;
-  const englishLines: string[] = [DAY_NAMES_EN[weekday], ""];
-  const frenchLines: string[] = [DAY_NAMES_FR[weekday], ""];
+  const englishHeader = template.is_daily_special ? `${DAY_NAMES_EN[weekday]} Special` : DAY_NAMES_EN[weekday];
+  const frenchHeader = template.is_daily_special
+    ? `Spécial du ${DAY_NAMES_FR[weekday].toLowerCase()}`
+    : DAY_NAMES_FR[weekday];
+
+  const englishLines: string[] = [englishHeader, ""];
+  const frenchLines: string[] = [frenchHeader, ""];
 
   if (template.is_daily_special) {
-    englishLines.push(`${DAY_NAMES_EN[weekday]} Special: ${template.title_en} - $10.44`);
+    englishLines.push(`${template.title_en} - $10.44`);
     englishLines.push("");
-    frenchLines.push(`Spécial du jour: ${template.title_fr} - 10,44 $`);
+    frenchLines.push(`${template.title_fr} - 10,44 $`);
     frenchLines.push("");
   }
 
@@ -120,10 +125,10 @@ function buildBilingualCaption(template: ScheduledTemplateRow): string {
   }
 
   englishLines.push("");
-  englishLines.push("Call to order today.");
+  englishLines.push("Call to order today: +1 819-647-2933");
 
   frenchLines.push("");
-  frenchLines.push("Appelez pour commander aujourd'hui.");
+  frenchLines.push("Appelez pour commander aujourd'hui : +1 819-647-2933");
 
   return [...englishLines, "", ...frenchLines].join("\n");
 }
