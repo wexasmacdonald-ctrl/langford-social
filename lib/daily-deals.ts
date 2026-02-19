@@ -125,7 +125,7 @@ function buildBilingualCaption(template: ScheduledTemplateRow): string {
   }
 
   englishLines.push("");
-  englishLines.push("Call to order today: +1 819-647-2933");
+  englishLines.push("Call for pickup (+1 819-647-2933)");
 
   frenchLines.push("");
   frenchLines.push("Appelez pour commander aujourd'hui : +1 819-647-2933");
