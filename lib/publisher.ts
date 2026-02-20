@@ -1,7 +1,13 @@
 import { upsertPublishRun } from "@/lib/db";
 import { buildScheduledPostPayload, getRunDateForNow, hasRunForDate } from "@/lib/daily-deals";
 import { getRuntimeEnv } from "@/lib/env";
-import { createCarouselContainer, createCarouselItemContainer, createMediaContainer, publishMediaContainer } from "@/lib/instagram";
+import {
+  createCarouselContainer,
+  createCarouselItemContainer,
+  createMediaContainer,
+  publishMediaContainer,
+  waitForMediaReady,
+} from "@/lib/instagram";
 import { sendPublishFailureAlert, sendPublishSuccessAlert } from "@/lib/alerts";
 import type { ScheduledPublishResult } from "@/lib/types";
 
@@ -25,16 +31,19 @@ async function publishScheduledPayload(payload: { media_urls: string[]; caption:
 
   if (payload.media_urls.length === 1) {
     const creationId = await createMediaContainer(payload.media_urls[0], payload.caption);
+    await waitForMediaReady(creationId);
     return publishMediaContainer(creationId);
   }
 
   const childIds: string[] = [];
   for (const imageUrl of payload.media_urls) {
     const childId = await createCarouselItemContainer(imageUrl);
+    await waitForMediaReady(childId);
     childIds.push(childId);
   }
 
   const carouselId = await createCarouselContainer(childIds, payload.caption);
+  await waitForMediaReady(carouselId);
   return publishMediaContainer(carouselId);
 }
 

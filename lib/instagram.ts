@@ -16,8 +16,69 @@ type MediaPublishResponse = {
   id: string;
 } & GraphApiError;
 
+type MediaStatusResponse = {
+  id?: string;
+  status_code?: string;
+  status?: string;
+  error_message?: string;
+} & GraphApiError;
+
 function extractGraphError(payload: GraphApiError): string {
   return payload.error?.message ?? "Instagram Graph API request failed";
+}
+
+async function getMediaStatus(creationId: string): Promise<MediaStatusResponse> {
+  const env = getInstagramEnv();
+  const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${creationId}`;
+  const query = new URLSearchParams({
+    fields: "status_code,status,error_message",
+    access_token: env.IG_ACCESS_TOKEN,
+  });
+
+  const response = await fetch(`${endpoint}?${query.toString()}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  });
+
+  const payload = (await response.json()) as MediaStatusResponse;
+  if (!response.ok) {
+    throw new Error(extractGraphError(payload));
+  }
+
+  return payload;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+export async function waitForMediaReady(
+  creationId: string,
+  options?: { timeoutMs?: number; pollMs?: number },
+): Promise<void> {
+  const timeoutMs = options?.timeoutMs ?? 90_000;
+  const pollMs = options?.pollMs ?? 2_500;
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const status = await getMediaStatus(creationId);
+    const code = (status.status_code ?? "").toUpperCase();
+
+    if (code === "FINISHED" || code === "PUBLISHED") {
+      return;
+    }
+
+    if (code === "ERROR" || code === "EXPIRED") {
+      const message = status.error_message || status.status || "Instagram media processing failed";
+      throw new Error(`Media container ${creationId} failed: ${message}`);
+    }
+
+    await delay(pollMs);
+  }
+
+  throw new Error(`Timed out waiting for media container ${creationId} to be ready`);
 }
 
 export async function createMediaContainer(imageUrl: string, caption?: string): Promise<string> {
