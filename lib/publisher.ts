@@ -2,7 +2,7 @@ import { upsertPublishRun } from "@/lib/db";
 import { buildScheduledPostPayload, getRunDateForNow, hasRunForDate } from "@/lib/daily-deals";
 import { getRuntimeEnv } from "@/lib/env";
 import { createCarouselContainer, createCarouselItemContainer, createMediaContainer, publishMediaContainer } from "@/lib/instagram";
-import { sendPublishFailureAlert } from "@/lib/alerts";
+import { sendPublishFailureAlert, sendPublishSuccessAlert } from "@/lib/alerts";
 import type { ScheduledPublishResult } from "@/lib/types";
 
 type RunScheduledPublishInput = {
@@ -87,6 +87,12 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       status: "posted",
       igMediaId,
       errorMessage: null,
+    });
+    await sendPublishSuccessAlert({
+      runDate,
+      weekdayKey: payload.weekday_key,
+      igMediaId,
+      mode: input.mode,
     });
 
     return {
