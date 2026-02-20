@@ -20,7 +20,6 @@ type MediaStatusResponse = {
   id?: string;
   status_code?: string;
   status?: string;
-  error_message?: string;
 } & GraphApiError;
 
 function extractGraphError(payload: GraphApiError): string {
@@ -31,7 +30,7 @@ async function getMediaStatus(creationId: string): Promise<MediaStatusResponse> 
   const env = getInstagramEnv();
   const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${creationId}`;
   const query = new URLSearchParams({
-    fields: "status_code,status,error_message",
+    fields: "status_code,status",
     access_token: env.IG_ACCESS_TOKEN,
   });
 
@@ -71,7 +70,7 @@ export async function waitForMediaReady(
     }
 
     if (code === "ERROR" || code === "EXPIRED") {
-      const message = status.error_message || status.status || "Instagram media processing failed";
+      const message = status.status || "Instagram media processing failed";
       throw new Error(`Media container ${creationId} failed: ${message}`);
     }
 
