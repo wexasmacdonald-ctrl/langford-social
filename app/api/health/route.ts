@@ -14,6 +14,7 @@ export async function GET() {
         ok: true,
         dry_run: runtime.DRY_RUN,
         alert_webhook_configured: Boolean(runtime.ALERT_WEBHOOK_URL),
+        facebook_configured: Boolean(process.env.FB_PAGE_ID && (process.env.FB_ACCESS_TOKEN || process.env.IG_ACCESS_TOKEN)),
       },
       { status: 200 },
     );

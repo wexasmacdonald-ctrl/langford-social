@@ -8,6 +8,12 @@ type InstagramEnv = {
   GRAPH_API_VERSION: string;
 };
 
+type FacebookEnv = {
+  FB_PAGE_ID: string;
+  FB_ACCESS_TOKEN: string;
+  GRAPH_API_VERSION: string;
+};
+
 type AuthEnv = {
   PUBLISH_CRON_SECRET: string;
   CRON_SECRET?: string;
@@ -49,6 +55,15 @@ export function getInstagramEnv(): InstagramEnv {
   return {
     IG_USER_ID: requireValue("IG_USER_ID", process.env.IG_USER_ID ?? ""),
     IG_ACCESS_TOKEN: requireValue("IG_ACCESS_TOKEN", process.env.IG_ACCESS_TOKEN ?? ""),
+    GRAPH_API_VERSION: process.env.GRAPH_API_VERSION ?? "v20.0",
+  };
+}
+
+export function getFacebookEnv(): FacebookEnv {
+  const instagramToken = process.env.IG_ACCESS_TOKEN ?? "";
+  return {
+    FB_PAGE_ID: requireValue("FB_PAGE_ID", process.env.FB_PAGE_ID ?? ""),
+    FB_ACCESS_TOKEN: requireValue("FB_ACCESS_TOKEN", process.env.FB_ACCESS_TOKEN ?? instagramToken),
     GRAPH_API_VERSION: process.env.GRAPH_API_VERSION ?? "v20.0",
   };
 }

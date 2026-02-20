@@ -53,6 +53,7 @@ export type PublishRunRow = {
   weekday_key: WeekdayKey;
   status: PublishRunStatus;
   ig_media_id: string | null;
+  fb_post_id: string | null;
   error_message: string | null;
   created_at: string;
 };
@@ -63,6 +64,7 @@ export type ScheduledPublishResult = {
   weekday_key: WeekdayKey;
   reason: string;
   ig_media_id: string | null;
+  fb_post_id: string | null;
   error_message: string | null;
   payload: ScheduledPostPayload | null;
   existing_run: PublishRunRow | null;

@@ -12,6 +12,7 @@ type PublishSuccessAlert = {
   runDate: string;
   weekdayKey: WeekdayKey;
   igMediaId: string;
+  fbPostId: string;
   mode: "cron" | "manual";
 };
 
@@ -60,9 +61,10 @@ export async function sendPublishSuccessAlert(input: PublishSuccessAlert): Promi
       run_date: input.runDate,
       weekday_key: input.weekdayKey,
       ig_media_id: input.igMediaId,
+      fb_post_id: input.fbPostId,
       mode: input.mode,
       timestamp: new Date().toISOString(),
     },
-    `✅ Post published (${input.weekdayKey} ${input.runDate}) media_id=${input.igMediaId}`,
+    `✅ Post published (${input.weekdayKey} ${input.runDate}) ig=${input.igMediaId} fb=${input.fbPostId}`,
   );
 }

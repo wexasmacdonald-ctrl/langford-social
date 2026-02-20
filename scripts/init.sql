@@ -45,9 +45,12 @@ CREATE TABLE IF NOT EXISTS publish_runs (
   weekday_key TEXT NOT NULL CHECK (weekday_key IN ('monday','tuesday','wednesday','thursday','friday','saturday','sunday')),
   status TEXT NOT NULL CHECK (status IN ('posted', 'failed', 'skipped')),
   ig_media_id TEXT NULL,
+  fb_post_id TEXT NULL,
   error_message TEXT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE publish_runs ADD COLUMN IF NOT EXISTS fb_post_id TEXT NULL;
 
 INSERT INTO scheduled_templates (weekday_key, title_en, title_fr, media_urls, is_daily_special, sort_order, active)
 VALUES

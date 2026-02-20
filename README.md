@@ -1,10 +1,11 @@
 # Social Admin
 
-Recurring Instagram carousel autoposter for daily restaurant specials.
+Recurring Instagram + Facebook autoposter for daily restaurant specials.
 
 ## What It Does
 
 - Publishes **one carousel post per day** at 8:00 AM local time (`America/Toronto` by default).
+- Publishes to Instagram Graph API and Facebook Pages Graph API in the same run.
 - Uses recurring weekday templates from `scheduled_templates` (not daily queue rows).
 - Writes idempotent run history to `publish_runs` so each date runs once unless forced.
 - Supports local/admin preview and simulation by date.
@@ -27,6 +28,8 @@ Recurring Instagram carousel autoposter for daily restaurant specials.
 - `NEON_DATABASE_URL`
 - `IG_USER_ID`
 - `IG_ACCESS_TOKEN`
+- `FB_PAGE_ID`
+- `FB_ACCESS_TOKEN` (optional if same as `IG_ACCESS_TOKEN`)
 - `GRAPH_API_VERSION` (default `v20.0`)
 - `PUBLISH_CRON_SECRET`
 - `CRON_SECRET`
@@ -34,7 +37,7 @@ Recurring Instagram carousel autoposter for daily restaurant specials.
 - `DAILY_POST_HOUR` (default `8`)
 - `PUBLIC_BASE_URL` (must be `https://` in production)
 - `DRY_RUN` (`true` disables real Instagram publishing and records `skipped`)
-- `ALERT_WEBHOOK_URL` (optional; receives JSON alert on publish success and failures)
+- `ALERT_WEBHOOK_URL` (optional; receives JSON alert on publish success and failures for IG/FB)
 
 ## API Endpoints
 
@@ -80,5 +83,5 @@ The route itself enforces local posting hour, so DST stays correct.
 ## Notes
 
 - Instagram publish requires real Meta credentials (`IG_USER_ID`, `IG_ACCESS_TOKEN`).
-- Facebook posting is expected via linked IG/FB account behavior.
+- Facebook publish requires a real Page ID (`FB_PAGE_ID`) and valid Page token (`FB_ACCESS_TOKEN` or fallback `IG_ACCESS_TOKEN`).
 - Before go-live, set `DRY_RUN=true` for safe end-to-end testing, then switch to `false`.

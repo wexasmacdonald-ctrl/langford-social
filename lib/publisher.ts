@@ -1,6 +1,7 @@
 import { upsertPublishRun } from "@/lib/db";
 import { buildScheduledPostPayload, getRunDateForNow, hasRunForDate } from "@/lib/daily-deals";
 import { getRuntimeEnv } from "@/lib/env";
+import { publishFacebookPost } from "@/lib/facebook";
 import {
   createCarouselContainer,
   createCarouselItemContainer,
@@ -59,6 +60,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       weekday_key: existingRun.weekday_key,
       reason: `Already processed for ${runDate}`,
       ig_media_id: existingRun.ig_media_id,
+      fb_post_id: existingRun.fb_post_id,
       error_message: existingRun.error_message,
       payload: null,
       existing_run: existingRun,
@@ -73,6 +75,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       weekdayKey: payload.weekday_key,
       status: "skipped",
       igMediaId: null,
+      fbPostId: null,
       errorMessage: "Dry-run mode enabled. Publish not executed.",
     });
 
@@ -82,6 +85,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       weekday_key: payload.weekday_key,
       reason: "Dry-run mode enabled. Publish not executed.",
       ig_media_id: null,
+      fb_post_id: null,
       error_message: null,
       payload,
       existing_run: existingRun,
@@ -90,17 +94,20 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
 
   try {
     const igMediaId = await publishScheduledPayload(payload);
+    const fbPostId = await publishFacebookPost(payload.media_urls, payload.caption);
     await upsertPublishRun({
       runDate,
       weekdayKey: payload.weekday_key,
       status: "posted",
       igMediaId,
+      fbPostId,
       errorMessage: null,
     });
     await sendPublishSuccessAlert({
       runDate,
       weekdayKey: payload.weekday_key,
       igMediaId,
+      fbPostId,
       mode: input.mode,
     });
 
@@ -110,6 +117,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       weekday_key: payload.weekday_key,
       reason: input.mode === "cron" ? "Scheduled post published" : "Manual publish completed",
       ig_media_id: igMediaId,
+      fb_post_id: fbPostId,
       error_message: null,
       payload,
       existing_run: existingRun,
@@ -121,6 +129,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       weekdayKey: payload.weekday_key,
       status: "failed",
       igMediaId: null,
+      fbPostId: null,
       errorMessage: message,
     });
     await sendPublishFailureAlert({
@@ -136,6 +145,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       weekday_key: payload.weekday_key,
       reason: "Publish failed",
       ig_media_id: null,
+      fb_post_id: null,
       error_message: message,
       payload,
       existing_run: existingRun,

@@ -29,6 +29,7 @@ type HealthResponse = {
   ok: boolean;
   dry_run?: boolean;
   alert_webhook_configured?: boolean;
+  facebook_configured?: boolean;
 };
 
 function getTodayDateKey(): string {
@@ -66,6 +67,7 @@ export default function AdminPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [isDryRun, setIsDryRun] = useState<boolean | null>(null);
   const [hasAlertWebhook, setHasAlertWebhook] = useState<boolean | null>(null);
+  const [isFacebookConfigured, setIsFacebookConfigured] = useState<boolean | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isLoadingRuns, setIsLoadingRuns] = useState(false);
   const [isPublishingDate, setIsPublishingDate] = useState(false);
@@ -113,9 +115,11 @@ export default function AdminPage() {
       }
       setIsDryRun(Boolean(data.dry_run));
       setHasAlertWebhook(Boolean(data.alert_webhook_configured));
+      setIsFacebookConfigured(Boolean(data.facebook_configured));
     } catch {
       setIsDryRun(null);
       setHasAlertWebhook(null);
+      setIsFacebookConfigured(null);
     }
   }
 
@@ -253,6 +257,17 @@ export default function AdminPage() {
         >
           Alerts: {hasAlertWebhook === null ? "Unknown" : hasAlertWebhook ? "Webhook configured" : "No webhook"}
         </span>
+        <span
+          style={{
+            padding: "4px 8px",
+            border: "1px solid #ccc",
+            borderRadius: 4,
+            background: isFacebookConfigured ? "#d1e7dd" : "#fff3cd",
+          }}
+        >
+          Facebook:{" "}
+          {isFacebookConfigured === null ? "Unknown" : isFacebookConfigured ? "Configured" : "Missing FB vars"}
+        </span>
       </div>
 
       <section style={{ background: "#fff", border: "1px solid #ddd", padding: 16, marginBottom: 16 }}>
@@ -335,6 +350,7 @@ export default function AdminPage() {
             <div>Run Date: {existingRun.run_date}</div>
             <div>Weekday: {existingRun.weekday_key}</div>
             <div>Instagram Media ID: {existingRun.ig_media_id ?? "-"}</div>
+            <div>Facebook Post ID: {existingRun.fb_post_id ?? "-"}</div>
             <div>Error: {existingRun.error_message ?? "-"}</div>
             <div>Updated At: {formatTimestamp(existingRun.created_at)}</div>
           </div>
@@ -354,6 +370,7 @@ export default function AdminPage() {
                   <th align="left">Weekday</th>
                   <th align="left">Status</th>
                   <th align="left">IG Media ID</th>
+                  <th align="left">FB Post ID</th>
                   <th align="left">Error</th>
                   <th align="left">Created</th>
                 </tr>
@@ -365,6 +382,7 @@ export default function AdminPage() {
                     <td>{run.weekday_key}</td>
                     <td>{run.status}</td>
                     <td>{run.ig_media_id ?? "-"}</td>
+                    <td>{run.fb_post_id ?? "-"}</td>
                     <td>{run.error_message ?? "-"}</td>
                     <td>{formatTimestamp(run.created_at)}</td>
                   </tr>

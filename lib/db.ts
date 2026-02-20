@@ -80,6 +80,7 @@ function normalizePublishRunRow(row: Record<string, unknown>): PublishRunRow {
     weekday_key: toWeekdayKey(row.weekday_key),
     status: (String(row.status ?? "skipped") as PublishRunStatus),
     ig_media_id: (row.ig_media_id as string | null) ?? null,
+    fb_post_id: (row.fb_post_id as string | null) ?? null,
     error_message: (row.error_message as string | null) ?? null,
     created_at: String(row.created_at ?? ""),
   };
@@ -121,10 +122,12 @@ async function ensureSchemaExtensions(): Promise<void> {
         weekday_key TEXT NOT NULL CHECK (weekday_key IN ('monday','tuesday','wednesday','thursday','friday','saturday','sunday')),
         status TEXT NOT NULL CHECK (status IN ('posted','failed','skipped')),
         ig_media_id TEXT NULL,
+        fb_post_id TEXT NULL,
         error_message TEXT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+    await sql`ALTER TABLE publish_runs ADD COLUMN IF NOT EXISTS fb_post_id TEXT NULL`;
 
     await sql`
       INSERT INTO scheduled_templates (weekday_key, title_en, title_fr, media_urls, is_daily_special, sort_order, active)
@@ -177,7 +180,7 @@ export async function getPublishRunByDate(runDate: string): Promise<PublishRunRo
   await ensureSchemaExtensions();
   const sql = getSql();
   const rows = await sql`
-    SELECT id, run_date, weekday_key, status, ig_media_id, error_message, created_at
+    SELECT id, run_date, weekday_key, status, ig_media_id, fb_post_id, error_message, created_at
     FROM publish_runs
     WHERE run_date = ${runDate}
     LIMIT 1
@@ -202,21 +205,23 @@ export async function upsertPublishRun(input: {
   weekdayKey: WeekdayKey;
   status: PublishRunStatus;
   igMediaId?: string | null;
+  fbPostId?: string | null;
   errorMessage?: string | null;
 }): Promise<PublishRunRow> {
   await ensureSchemaExtensions();
   const sql = getSql();
   const rows = await sql`
-    INSERT INTO publish_runs (run_date, weekday_key, status, ig_media_id, error_message)
-    VALUES (${input.runDate}, ${input.weekdayKey}, ${input.status}, ${input.igMediaId ?? null}, ${input.errorMessage ?? null})
+    INSERT INTO publish_runs (run_date, weekday_key, status, ig_media_id, fb_post_id, error_message)
+    VALUES (${input.runDate}, ${input.weekdayKey}, ${input.status}, ${input.igMediaId ?? null}, ${input.fbPostId ?? null}, ${input.errorMessage ?? null})
     ON CONFLICT (run_date)
     DO UPDATE SET
       weekday_key = EXCLUDED.weekday_key,
       status = EXCLUDED.status,
       ig_media_id = EXCLUDED.ig_media_id,
+      fb_post_id = EXCLUDED.fb_post_id,
       error_message = EXCLUDED.error_message,
       created_at = NOW()
-    RETURNING id, run_date, weekday_key, status, ig_media_id, error_message, created_at
+    RETURNING id, run_date, weekday_key, status, ig_media_id, fb_post_id, error_message, created_at
   `;
   return normalizePublishRunRow(rows[0] as Record<string, unknown>);
 }
@@ -226,7 +231,7 @@ export async function listPublishRuns(limit = 30): Promise<PublishRunRow[]> {
   const sql = getSql();
   const safeLimit = Math.max(1, Math.min(200, Math.trunc(limit)));
   const rows = await sql`
-    SELECT id, run_date, weekday_key, status, ig_media_id, error_message, created_at
+    SELECT id, run_date, weekday_key, status, ig_media_id, fb_post_id, error_message, created_at
     FROM publish_runs
     ORDER BY run_date DESC
     LIMIT ${safeLimit}
