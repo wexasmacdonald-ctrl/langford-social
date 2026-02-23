@@ -52,6 +52,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
   const runtime = getRuntimeEnv();
   const runDate = input.dateKey ?? getRunDateForNow();
   const existingRun = await hasRunForDate(runDate);
+  let igMediaId: string | null = null;
 
   if (existingRun && !input.force) {
     return {
@@ -93,7 +94,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
   }
 
   try {
-    const igMediaId = await publishScheduledPayload(payload);
+    igMediaId = await publishScheduledPayload(payload);
     const fbPostId = await publishFacebookPost(payload.media_urls, payload.caption);
     await upsertPublishRun({
       runDate,
@@ -128,7 +129,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       runDate,
       weekdayKey: payload.weekday_key,
       status: "failed",
-      igMediaId: null,
+      igMediaId,
       fbPostId: null,
       errorMessage: message,
     });
@@ -144,7 +145,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       run_date: runDate,
       weekday_key: payload.weekday_key,
       reason: "Publish failed",
-      ig_media_id: null,
+      ig_media_id: igMediaId,
       fb_post_id: null,
       error_message: message,
       payload,
