@@ -95,7 +95,13 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
 
   try {
     igMediaId = await publishScheduledPayload(payload);
-    const fbPostId = await publishFacebookPost(payload.media_urls, payload.caption);
+    let fbPostId: string;
+    try {
+      fbPostId = await publishFacebookPost(payload.media_urls, payload.caption);
+    } catch (error) {
+      const fbMessage = stringifyError(error);
+      throw new Error(`Facebook publish failed: ${fbMessage}`);
+    }
     await upsertPublishRun({
       runDate,
       weekdayKey: payload.weekday_key,

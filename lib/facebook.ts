@@ -3,6 +3,10 @@ import { getFacebookEnv } from "@/lib/env";
 type GraphApiError = {
   error?: {
     message?: string;
+    code?: number;
+    error_subcode?: number;
+    type?: string;
+    fbtrace_id?: string;
   };
 };
 
@@ -16,7 +20,12 @@ type FeedCreateResponse = {
 } & GraphApiError;
 
 function extractGraphError(payload: GraphApiError): string {
-  return payload.error?.message ?? "Facebook Graph API request failed";
+  const message = payload.error?.message ?? "Facebook Graph API request failed";
+  const code = payload.error?.code ? ` code=${payload.error.code}` : "";
+  const subcode = payload.error?.error_subcode ? ` subcode=${payload.error.error_subcode}` : "";
+  const type = payload.error?.type ? ` type=${payload.error.type}` : "";
+  const trace = payload.error?.fbtrace_id ? ` trace=${payload.error.fbtrace_id}` : "";
+  return `${message}${code}${subcode}${type}${trace}`.trim();
 }
 
 async function uploadUnpublishedPhoto(imageUrl: string): Promise<string> {
