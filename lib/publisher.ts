@@ -9,7 +9,7 @@ import {
   publishMediaContainer,
   waitForMediaReady,
 } from "@/lib/instagram";
-import { sendPublishFailureAlert, sendPublishSuccessAlert } from "@/lib/alerts";
+import { sendPublishFailureAlert } from "@/lib/alerts";
 import type { ScheduledPublishResult } from "@/lib/types";
 
 type RunScheduledPublishInput = {
@@ -114,13 +114,6 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       igMediaId,
       fbPostId,
       errorMessage: null,
-    });
-    await sendPublishSuccessAlert({
-      runDate,
-      weekdayKey: payload.weekday_key,
-      igMediaId,
-      fbPostId,
-      mode: input.mode,
     });
 
     return {

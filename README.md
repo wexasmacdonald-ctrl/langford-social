@@ -37,7 +37,7 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
 - `DAILY_POST_HOUR` (default `8`)
 - `PUBLIC_BASE_URL` (must be `https://` in production)
 - `DRY_RUN` (`true` disables real Instagram publishing and records `skipped`)
-- `ALERT_WEBHOOK_URL` (optional; receives JSON alert on publish success and failures for IG/FB)
+- `ALERT_WEBHOOK_URL` (optional; receives JSON alert on publish failures for IG/FB)
 
 ## API Endpoints
 

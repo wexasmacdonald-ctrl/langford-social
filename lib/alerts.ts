@@ -8,14 +8,6 @@ type PublishFailureAlert = {
   errorMessage: string;
 };
 
-type PublishSuccessAlert = {
-  runDate: string;
-  weekdayKey: WeekdayKey;
-  igMediaId: string;
-  fbPostId: string;
-  mode: "cron" | "manual";
-};
-
 async function postAlert(body: Record<string, unknown>, content: string): Promise<void> {
   const runtime = getRuntimeEnv();
   if (!runtime.ALERT_WEBHOOK_URL) {
@@ -50,21 +42,5 @@ export async function sendPublishFailureAlert(input: PublishFailureAlert): Promi
       timestamp: new Date().toISOString(),
     },
     `❌ Publish failed (${input.weekdayKey} ${input.runDate}): ${input.errorMessage}`,
-  );
-}
-
-export async function sendPublishSuccessAlert(input: PublishSuccessAlert): Promise<void> {
-  await postAlert(
-    {
-      event: "publish_posted",
-      service: "social-admin",
-      run_date: input.runDate,
-      weekday_key: input.weekdayKey,
-      ig_media_id: input.igMediaId,
-      fb_post_id: input.fbPostId,
-      mode: input.mode,
-      timestamp: new Date().toISOString(),
-    },
-    `✅ Post published (${input.weekdayKey} ${input.runDate}) ig=${input.igMediaId} fb=${input.fbPostId}`,
   );
 }
