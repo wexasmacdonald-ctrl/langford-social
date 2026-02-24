@@ -94,7 +94,12 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
   }
 
   try {
-    igMediaId = await publishScheduledPayload(payload);
+    try {
+      igMediaId = await publishScheduledPayload(payload);
+    } catch (error) {
+      const igMessage = stringifyError(error);
+      throw new Error(`Instagram publish failed: ${igMessage}`);
+    }
     let fbPostId: string;
     try {
       fbPostId = await publishFacebookPost(payload.media_urls, payload.caption);
