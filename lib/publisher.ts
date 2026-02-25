@@ -2,6 +2,7 @@ import { upsertPublishRun } from "@/lib/db";
 import { buildScheduledPostPayload, getRunDateForNow, hasRunForDate } from "@/lib/daily-deals";
 import { getRuntimeEnv } from "@/lib/env";
 import { publishFacebookPost } from "@/lib/facebook";
+import { refreshMetaTokens } from "@/lib/meta-refresh";
 import {
   createCarouselContainer,
   createCarouselItemContainer,
@@ -9,6 +10,7 @@ import {
   publishMediaContainer,
   waitForMediaReady,
 } from "@/lib/instagram";
+import { getFacebookAccessToken, getInstagramAccessToken } from "@/lib/tokens";
 import { sendPublishFailureAlert } from "@/lib/alerts";
 import type { ScheduledPublishResult } from "@/lib/types";
 
@@ -25,27 +27,27 @@ function stringifyError(error: unknown): string {
   return "Unknown error";
 }
 
-async function publishScheduledPayload(payload: { media_urls: string[]; caption: string }): Promise<string> {
+async function publishScheduledPayload(payload: { media_urls: string[]; caption: string }, accessToken: string): Promise<string> {
   if (payload.media_urls.length === 0) {
     throw new Error("Scheduled payload has no media URLs");
   }
 
   if (payload.media_urls.length === 1) {
-    const creationId = await createMediaContainer(payload.media_urls[0], payload.caption);
-    await waitForMediaReady(creationId);
-    return publishMediaContainer(creationId);
+    const creationId = await createMediaContainer(payload.media_urls[0], accessToken, payload.caption);
+    await waitForMediaReady(creationId, accessToken);
+    return publishMediaContainer(creationId, accessToken);
   }
 
   const childIds: string[] = [];
   for (const imageUrl of payload.media_urls) {
-    const childId = await createCarouselItemContainer(imageUrl);
-    await waitForMediaReady(childId);
+    const childId = await createCarouselItemContainer(imageUrl, accessToken);
+    await waitForMediaReady(childId, accessToken);
     childIds.push(childId);
   }
 
-  const carouselId = await createCarouselContainer(childIds, payload.caption);
-  await waitForMediaReady(carouselId);
-  return publishMediaContainer(carouselId);
+  const carouselId = await createCarouselContainer(childIds, accessToken, payload.caption);
+  await waitForMediaReady(carouselId, accessToken);
+  return publishMediaContainer(carouselId, accessToken);
 }
 
 export async function runScheduledPublish(input: RunScheduledPublishInput): Promise<ScheduledPublishResult> {
@@ -94,15 +96,18 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
   }
 
   try {
+    await refreshMetaTokens();
+    const instagramAccessToken = await getInstagramAccessToken();
+    const facebookAccessToken = await getFacebookAccessToken();
     try {
-      igMediaId = await publishScheduledPayload(payload);
+      igMediaId = await publishScheduledPayload(payload, instagramAccessToken);
     } catch (error) {
       const igMessage = stringifyError(error);
       throw new Error(`Instagram publish failed: ${igMessage}`);
     }
     let fbPostId: string;
     try {
-      fbPostId = await publishFacebookPost(payload.media_urls, payload.caption);
+      fbPostId = await publishFacebookPost(payload.media_urls, payload.caption, facebookAccessToken);
     } catch (error) {
       const fbMessage = stringifyError(error);
       throw new Error(`Facebook publish failed: ${fbMessage}`);

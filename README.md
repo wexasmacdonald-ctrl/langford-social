@@ -27,9 +27,11 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
 
 - `NEON_DATABASE_URL`
 - `IG_USER_ID`
-- `IG_ACCESS_TOKEN`
+- `IG_ACCESS_TOKEN` (optional bootstrap token; app prefers `api_tokens` table)
 - `FB_PAGE_ID`
-- `FB_ACCESS_TOKEN` (optional if same as `IG_ACCESS_TOKEN`)
+- `FB_ACCESS_TOKEN` (optional bootstrap token; app prefers `api_tokens` table)
+- `META_APP_ID` (optional but recommended; enables automatic token refresh)
+- `META_APP_SECRET` (optional but recommended; enables automatic token refresh)
 - `GRAPH_API_VERSION` (default `v20.0`)
 - `PUBLISH_CRON_SECRET`
 - `CRON_SECRET`
@@ -51,6 +53,8 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
   - Cron entrypoint; checks local time window and publishes when due.
 - `GET /api/publish-runs?limit=30`
   - Returns recent run history.
+- `POST /api/tokens/refresh`
+  - Forces Meta token refresh and stores new tokens in `api_tokens`.
 - `GET|POST /api/queue`
   - Deprecated (manual queue removed).
 - `GET|POST /api/cron/queue-today`
@@ -58,12 +62,7 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
 
 ## Cron
 
-`vercel.json`:
-
-- Path: `/api/cron/daily`
-- Schedule: `0 * * * *` (hourly UTC)
-
-The route itself enforces local posting hour, so DST stays correct.
+`vercel.json` runs `/api/cron/daily` twice daily (`12:00` and `13:00` UTC) to cover DST safely on hobby limits.
 
 ## Weekly Carousel Rules
 
@@ -82,6 +81,7 @@ The route itself enforces local posting hour, so DST stays correct.
 
 ## Notes
 
-- Instagram publish requires real Meta credentials (`IG_USER_ID`, `IG_ACCESS_TOKEN`).
-- Facebook publish requires a real Page ID (`FB_PAGE_ID`) and valid Page token (`FB_ACCESS_TOKEN` or fallback `IG_ACCESS_TOKEN`).
+- Instagram publish requires `IG_USER_ID` and a valid token in `api_tokens(provider='instagram')` (or env fallback).
+- Facebook publish requires `FB_PAGE_ID` and a valid token in `api_tokens(provider='facebook')` (or env fallback).
+- If `META_APP_ID` and `META_APP_SECRET` are set, tokens are refreshed automatically during publish runs.
 - Before go-live, set `DRY_RUN=true` for safe end-to-end testing, then switch to `false`.

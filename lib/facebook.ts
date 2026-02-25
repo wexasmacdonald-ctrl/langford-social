@@ -28,13 +28,13 @@ function extractGraphError(payload: GraphApiError): string {
   return `${message}${code}${subcode}${type}${trace}`.trim();
 }
 
-async function uploadUnpublishedPhoto(imageUrl: string): Promise<string> {
+async function uploadUnpublishedPhoto(imageUrl: string, accessToken: string): Promise<string> {
   const env = getFacebookEnv();
   const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.FB_PAGE_ID}/photos`;
   const body = new URLSearchParams({
     url: imageUrl,
     published: "false",
-    access_token: env.FB_ACCESS_TOKEN,
+    access_token: accessToken,
   });
 
   const response = await fetch(endpoint, {
@@ -51,7 +51,7 @@ async function uploadUnpublishedPhoto(imageUrl: string): Promise<string> {
   return payload.id;
 }
 
-export async function publishFacebookPost(mediaUrls: string[], caption: string): Promise<string> {
+export async function publishFacebookPost(mediaUrls: string[], caption: string, accessToken: string): Promise<string> {
   if (mediaUrls.length === 0) {
     throw new Error("Facebook publish requires at least one media URL");
   }
@@ -64,7 +64,7 @@ export async function publishFacebookPost(mediaUrls: string[], caption: string):
       url: mediaUrls[0],
       caption,
       published: "true",
-      access_token: env.FB_ACCESS_TOKEN,
+      access_token: accessToken,
     });
 
     const response = await fetch(endpoint, {
@@ -83,14 +83,14 @@ export async function publishFacebookPost(mediaUrls: string[], caption: string):
 
   const photoIds: string[] = [];
   for (const mediaUrl of mediaUrls) {
-    const photoId = await uploadUnpublishedPhoto(mediaUrl);
+    const photoId = await uploadUnpublishedPhoto(mediaUrl, accessToken);
     photoIds.push(photoId);
   }
 
   const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.FB_PAGE_ID}/feed`;
   const body = new URLSearchParams({
     message: caption,
-    access_token: env.FB_ACCESS_TOKEN,
+    access_token: accessToken,
   });
 
   for (let index = 0; index < photoIds.length; index += 1) {

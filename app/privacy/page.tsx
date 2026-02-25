@@ -43,7 +43,7 @@ export default function PrivacyPage() {
       <h2>Retention</h2>
       <ul>
         <li>Publish logs are retained for operational history and troubleshooting.</li>
-        <li>Access tokens are stored in deployment environment variables.</li>
+        <li>Access tokens are stored in secure operational storage (database and/or deployment environment).</li>
         <li>Data can be removed by the operator at any time.</li>
       </ul>
 

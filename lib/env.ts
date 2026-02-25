@@ -4,13 +4,13 @@ type DbEnv = {
 
 type InstagramEnv = {
   IG_USER_ID: string;
-  IG_ACCESS_TOKEN: string;
+  IG_ACCESS_TOKEN?: string;
   GRAPH_API_VERSION: string;
 };
 
 type FacebookEnv = {
   FB_PAGE_ID: string;
-  FB_ACCESS_TOKEN: string;
+  FB_ACCESS_TOKEN?: string;
   GRAPH_API_VERSION: string;
 };
 
@@ -28,6 +28,11 @@ type ScheduleEnv = {
 type RuntimeEnv = {
   DRY_RUN: boolean;
   ALERT_WEBHOOK_URL?: string;
+};
+
+type MetaRefreshEnv = {
+  META_APP_ID?: string;
+  META_APP_SECRET?: string;
 };
 
 function parseBoolean(value: string | undefined, defaultValue = false): boolean {
@@ -54,16 +59,15 @@ export function getDbEnv(): DbEnv {
 export function getInstagramEnv(): InstagramEnv {
   return {
     IG_USER_ID: requireValue("IG_USER_ID", process.env.IG_USER_ID ?? ""),
-    IG_ACCESS_TOKEN: requireValue("IG_ACCESS_TOKEN", process.env.IG_ACCESS_TOKEN ?? ""),
+    IG_ACCESS_TOKEN: process.env.IG_ACCESS_TOKEN?.trim() || undefined,
     GRAPH_API_VERSION: process.env.GRAPH_API_VERSION ?? "v20.0",
   };
 }
 
 export function getFacebookEnv(): FacebookEnv {
-  const instagramToken = process.env.IG_ACCESS_TOKEN ?? "";
   return {
     FB_PAGE_ID: requireValue("FB_PAGE_ID", process.env.FB_PAGE_ID ?? ""),
-    FB_ACCESS_TOKEN: requireValue("FB_ACCESS_TOKEN", process.env.FB_ACCESS_TOKEN ?? instagramToken),
+    FB_ACCESS_TOKEN: process.env.FB_ACCESS_TOKEN?.trim() || process.env.IG_ACCESS_TOKEN?.trim() || undefined,
     GRAPH_API_VERSION: process.env.GRAPH_API_VERSION ?? "v20.0",
   };
 }
@@ -90,5 +94,12 @@ export function getRuntimeEnv(): RuntimeEnv {
   return {
     DRY_RUN: parseBoolean(process.env.DRY_RUN, false),
     ALERT_WEBHOOK_URL: process.env.ALERT_WEBHOOK_URL?.trim() || undefined,
+  };
+}
+
+export function getMetaRefreshEnv(): MetaRefreshEnv {
+  return {
+    META_APP_ID: process.env.META_APP_ID?.trim() || undefined,
+    META_APP_SECRET: process.env.META_APP_SECRET?.trim() || undefined,
   };
 }

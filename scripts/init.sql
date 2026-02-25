@@ -52,6 +52,13 @@ CREATE TABLE IF NOT EXISTS publish_runs (
 
 ALTER TABLE publish_runs ADD COLUMN IF NOT EXISTS fb_post_id TEXT NULL;
 
+CREATE TABLE IF NOT EXISTS api_tokens (
+  provider TEXT PRIMARY KEY CHECK (provider IN ('instagram','facebook')),
+  access_token TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 INSERT INTO scheduled_templates (weekday_key, title_en, title_fr, media_urls, is_daily_special, sort_order, active)
 VALUES
   ('monday', 'Hamburger Platter', 'Assiette hamburger', '["/images/hamburger-platter.png","/images/pizza-pepperoni.png","/images/breakfast-deal.png"]'::jsonb, true, 1, true),

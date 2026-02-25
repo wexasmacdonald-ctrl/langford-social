@@ -98,3 +98,12 @@ export type ErrorPayload = {
     message: string;
   };
 };
+
+export type ApiTokenProvider = "instagram" | "facebook";
+
+export type ApiTokenRow = {
+  provider: ApiTokenProvider;
+  access_token: string;
+  expires_at: string | null;
+  updated_at: string;
+};

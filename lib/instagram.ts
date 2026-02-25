@@ -26,12 +26,12 @@ function extractGraphError(payload: GraphApiError): string {
   return payload.error?.message ?? "Instagram Graph API request failed";
 }
 
-async function getMediaStatus(creationId: string): Promise<MediaStatusResponse> {
+async function getMediaStatus(creationId: string, accessToken: string): Promise<MediaStatusResponse> {
   const env = getInstagramEnv();
   const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${creationId}`;
   const query = new URLSearchParams({
     fields: "status_code,status",
-    access_token: env.IG_ACCESS_TOKEN,
+    access_token: accessToken,
   });
 
   const response = await fetch(`${endpoint}?${query.toString()}`, {
@@ -55,6 +55,7 @@ function delay(ms: number): Promise<void> {
 
 export async function waitForMediaReady(
   creationId: string,
+  accessToken: string,
   options?: { timeoutMs?: number; pollMs?: number },
 ): Promise<void> {
   const timeoutMs = options?.timeoutMs ?? 90_000;
@@ -62,7 +63,7 @@ export async function waitForMediaReady(
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
-    const status = await getMediaStatus(creationId);
+    const status = await getMediaStatus(creationId, accessToken);
     const code = (status.status_code ?? "").toUpperCase();
 
     if (code === "FINISHED" || code === "PUBLISHED") {
@@ -80,7 +81,7 @@ export async function waitForMediaReady(
   throw new Error(`Timed out waiting for media container ${creationId} to be ready`);
 }
 
-export async function createMediaContainer(imageUrl: string, caption?: string): Promise<string> {
+export async function createMediaContainer(imageUrl: string, accessToken: string, caption?: string): Promise<string> {
   const env = getInstagramEnv();
   const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.IG_USER_ID}/media`;
 
@@ -88,7 +89,7 @@ export async function createMediaContainer(imageUrl: string, caption?: string): 
     image_url: imageUrl,
     caption: caption ?? "",
     is_published: "false",
-    access_token: env.IG_ACCESS_TOKEN,
+    access_token: accessToken,
   });
 
   const response = await fetch(endpoint, {
@@ -105,14 +106,14 @@ export async function createMediaContainer(imageUrl: string, caption?: string): 
   return payload.id;
 }
 
-export async function createCarouselItemContainer(imageUrl: string): Promise<string> {
+export async function createCarouselItemContainer(imageUrl: string, accessToken: string): Promise<string> {
   const env = getInstagramEnv();
   const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.IG_USER_ID}/media`;
 
   const body = new URLSearchParams({
     image_url: imageUrl,
     is_carousel_item: "true",
-    access_token: env.IG_ACCESS_TOKEN,
+    access_token: accessToken,
   });
 
   const response = await fetch(endpoint, {
@@ -129,7 +130,11 @@ export async function createCarouselItemContainer(imageUrl: string): Promise<str
   return payload.id;
 }
 
-export async function createCarouselContainer(childIds: string[], caption?: string): Promise<string> {
+export async function createCarouselContainer(
+  childIds: string[],
+  accessToken: string,
+  caption?: string,
+): Promise<string> {
   const env = getInstagramEnv();
   const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.IG_USER_ID}/media`;
 
@@ -137,7 +142,7 @@ export async function createCarouselContainer(childIds: string[], caption?: stri
     media_type: "CAROUSEL",
     children: childIds.join(","),
     caption: caption ?? "",
-    access_token: env.IG_ACCESS_TOKEN,
+    access_token: accessToken,
   });
 
   const response = await fetch(endpoint, {
@@ -154,13 +159,13 @@ export async function createCarouselContainer(childIds: string[], caption?: stri
   return payload.id;
 }
 
-export async function publishMediaContainer(creationId: string): Promise<string> {
+export async function publishMediaContainer(creationId: string, accessToken: string): Promise<string> {
   const env = getInstagramEnv();
   const endpoint = `https://graph.facebook.com/${env.GRAPH_API_VERSION}/${env.IG_USER_ID}/media_publish`;
 
   const body = new URLSearchParams({
     creation_id: creationId,
-    access_token: env.IG_ACCESS_TOKEN,
+    access_token: accessToken,
   });
 
   const response = await fetch(endpoint, {

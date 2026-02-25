@@ -1,6 +1,14 @@
 import { neon } from "@neondatabase/serverless";
 import { getDbEnv } from "@/lib/env";
-import type { PostRow, PublishRunRow, PublishRunStatus, ScheduledTemplateRow, WeekdayKey } from "@/lib/types";
+import type {
+  ApiTokenProvider,
+  ApiTokenRow,
+  PostRow,
+  PublishRunRow,
+  PublishRunStatus,
+  ScheduledTemplateRow,
+  WeekdayKey,
+} from "@/lib/types";
 
 function getSql() {
   const env = getDbEnv();
@@ -86,6 +94,19 @@ function normalizePublishRunRow(row: Record<string, unknown>): PublishRunRow {
   };
 }
 
+function toApiTokenProvider(value: unknown): ApiTokenProvider {
+  return String(value ?? "").toLowerCase() === "facebook" ? "facebook" : "instagram";
+}
+
+function normalizeApiTokenRow(row: Record<string, unknown>): ApiTokenRow {
+  return {
+    provider: toApiTokenProvider(row.provider),
+    access_token: String(row.access_token ?? ""),
+    expires_at: (row.expires_at as string | null) ?? null,
+    updated_at: String(row.updated_at ?? ""),
+  };
+}
+
 async function ensureSchemaExtensions(): Promise<void> {
   if (schemaReady) {
     return schemaReady;
@@ -128,6 +149,14 @@ async function ensureSchemaExtensions(): Promise<void> {
       )
     `;
     await sql`ALTER TABLE publish_runs ADD COLUMN IF NOT EXISTS fb_post_id TEXT NULL`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS api_tokens (
+        provider TEXT PRIMARY KEY CHECK (provider IN ('instagram','facebook')),
+        access_token TEXT NOT NULL,
+        expires_at TIMESTAMPTZ NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
 
     await sql`
       INSERT INTO scheduled_templates (weekday_key, title_en, title_fr, media_urls, is_daily_special, sort_order, active)
@@ -237,6 +266,39 @@ export async function listPublishRuns(limit = 30): Promise<PublishRunRow[]> {
     LIMIT ${safeLimit}
   `;
   return (rows as Record<string, unknown>[]).map(normalizePublishRunRow);
+}
+
+export async function getApiToken(provider: ApiTokenProvider): Promise<ApiTokenRow | null> {
+  await ensureSchemaExtensions();
+  const sql = getSql();
+  const rows = await sql`
+    SELECT provider, access_token, expires_at, updated_at
+    FROM api_tokens
+    WHERE provider = ${provider}
+    LIMIT 1
+  `;
+  const row = rows[0] as Record<string, unknown> | undefined;
+  return row ? normalizeApiTokenRow(row) : null;
+}
+
+export async function upsertApiToken(input: {
+  provider: ApiTokenProvider;
+  accessToken: string;
+  expiresAt?: string | null;
+}): Promise<ApiTokenRow> {
+  await ensureSchemaExtensions();
+  const sql = getSql();
+  const rows = await sql`
+    INSERT INTO api_tokens (provider, access_token, expires_at)
+    VALUES (${input.provider}, ${input.accessToken}, ${input.expiresAt ?? null})
+    ON CONFLICT (provider)
+    DO UPDATE SET
+      access_token = EXCLUDED.access_token,
+      expires_at = EXCLUDED.expires_at,
+      updated_at = NOW()
+    RETURNING provider, access_token, expires_at, updated_at
+  `;
+  return normalizeApiTokenRow(rows[0] as Record<string, unknown>);
 }
 
 export async function listQueuedPosts(): Promise<PostRow[]> {
