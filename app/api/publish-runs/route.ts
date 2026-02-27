@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deletePublishRunByDate, listPublishRuns } from "@/lib/db";
+import { deleteAllPublishRuns, deletePublishRunByDate, listPublishRuns } from "@/lib/db";
 import { getAuthEnv } from "@/lib/env";
 import { getBearerToken, jsonError } from "@/lib/http";
 
@@ -42,6 +42,12 @@ export async function DELETE(request: Request) {
     }
 
     const url = new URL(request.url);
+    const clearAll = (url.searchParams.get("all") ?? "").toLowerCase();
+    if (clearAll === "1" || clearAll === "true" || clearAll === "yes") {
+      const deletedCount = await deleteAllPublishRuns();
+      return NextResponse.json({ ok: true, deleted_count: deletedCount }, { status: 200 });
+    }
+
     const runDate = url.searchParams.get("date")?.trim();
 
     if (!runDate || !/^\d{4}-\d{2}-\d{2}$/.test(runDate)) {

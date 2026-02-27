@@ -229,6 +229,16 @@ export async function deletePublishRunByDate(runDate: string): Promise<boolean> 
   return rows.length > 0;
 }
 
+export async function deleteAllPublishRuns(): Promise<number> {
+  await ensureSchemaExtensions();
+  const sql = getSql();
+  const rows = await sql`
+    DELETE FROM publish_runs
+    RETURNING id
+  `;
+  return rows.length;
+}
+
 export async function upsertPublishRun(input: {
   runDate: string;
   weekdayKey: WeekdayKey;

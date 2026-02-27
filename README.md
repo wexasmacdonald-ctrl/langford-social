@@ -53,6 +53,8 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
   - Cron entrypoint; checks local time window and publishes when due.
 - `GET /api/publish-runs?limit=30`
   - Returns recent run history.
+- `DELETE /api/publish-runs?all=true`
+  - Clears all historical run records (useful after testing to avoid date clashes).
 - `POST /api/tokens/refresh`
   - Forces Meta token refresh and stores new tokens in `api_tokens`.
 - `GET|POST /api/queue`

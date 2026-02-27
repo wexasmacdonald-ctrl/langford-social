@@ -56,7 +56,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
   const existingRun = await hasRunForDate(runDate);
   let igMediaId: string | null = null;
 
-  const shouldSkipForExistingRun = existingRun && !input.force && existingRun.status !== "failed";
+  const shouldSkipForExistingRun = existingRun && !input.force && existingRun.status === "posted";
   if (shouldSkipForExistingRun) {
     return {
       status: "skipped",
