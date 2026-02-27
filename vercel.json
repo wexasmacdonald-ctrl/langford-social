@@ -6,7 +6,15 @@
     },
     {
       "path": "/api/cron/daily",
+      "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/cron/daily",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/daily",
+      "schedule": "30 13 * * *"
     }
   ]
 }
