@@ -182,10 +182,14 @@ export function canRunNow(now = new Date()): ScheduleWindowResult {
     .find((part) => part.type === "hour")?.value;
 
   const localHour = Number(hourPart ?? "0");
-  if (localHour !== env.DAILY_POST_HOUR) {
+  const windowStartHour = env.DAILY_POST_HOUR;
+  const windowEndHour = Math.min(23, env.DAILY_POST_HOUR + 2);
+  const withinWindow = localHour >= windowStartHour && localHour <= windowEndHour;
+
+  if (!withinWindow) {
     return {
       should_run: false,
-      reason: `Not posting hour yet (${localHour}:00 local)`,
+      reason: `Outside posting window (${windowStartHour}:00-${windowEndHour}:59 local, now ${localHour}:00)`,
       run_date: dateMeta.dateKey,
       weekday_key: weekday,
       local_hour: localHour,

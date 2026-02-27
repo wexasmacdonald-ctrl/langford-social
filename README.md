@@ -65,6 +65,7 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
 `vercel.json` runs `/api/cron/daily` at `12:00`, `12:30`, `13:00`, and `13:30` UTC.
 - This covers DST and gives one automatic retry within the same local 8 AM hour.
 - If the first attempt fails and writes `failed`, later cron attempts on the same date will retry automatically.
+- Cron publishing uses a local-hour window (`DAILY_POST_HOUR` through +2 hours) so delayed Vercel cron invocations still post the same morning.
 
 ## Weekly Carousel Rules
 
