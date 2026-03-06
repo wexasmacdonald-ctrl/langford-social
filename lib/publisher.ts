@@ -20,11 +20,57 @@ type RunScheduledPublishInput = {
   mode: "cron" | "manual";
 };
 
+const TRANSIENT_ERROR_PATTERNS = [
+  "unexpected error has occurred",
+  "please retry your request later",
+  "temporarily unavailable",
+  "timeout",
+  "timed out",
+  "rate limit",
+  "service unavailable",
+  "connection reset",
+  "econnreset",
+  "etimedout",
+];
+
 function stringifyError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
   return "Unknown error";
+}
+
+function isTransientError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return TRANSIENT_ERROR_PATTERNS.some((pattern) => normalized.includes(pattern));
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function withRetry<T>(operation: () => Promise<T>, maxAttempts: number): Promise<T> {
+  let attempt = 0;
+  let lastError: unknown = null;
+
+  while (attempt < maxAttempts) {
+    attempt += 1;
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      const message = stringifyError(error);
+      if (attempt >= maxAttempts || !isTransientError(message)) {
+        throw error;
+      }
+      const backoffMs = attempt * 4000;
+      await delay(backoffMs);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Retry failed");
 }
 
 async function publishScheduledPayload(payload: { media_urls: string[]; caption: string }, accessToken: string): Promise<string> {
@@ -101,14 +147,14 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
     const instagramAccessToken = await getInstagramAccessToken();
     const facebookAccessToken = await getFacebookAccessToken();
     try {
-      igMediaId = await publishScheduledPayload(payload, instagramAccessToken);
+      igMediaId = await withRetry(() => publishScheduledPayload(payload, instagramAccessToken), 3);
     } catch (error) {
       const igMessage = stringifyError(error);
       throw new Error(`Instagram publish failed: ${igMessage}`);
     }
     let fbPostId: string;
     try {
-      fbPostId = await publishFacebookPost(payload.media_urls, payload.caption, facebookAccessToken);
+      fbPostId = await withRetry(() => publishFacebookPost(payload.media_urls, payload.caption, facebookAccessToken), 2);
     } catch (error) {
       const fbMessage = stringifyError(error);
       throw new Error(`Facebook publish failed: ${fbMessage}`);
