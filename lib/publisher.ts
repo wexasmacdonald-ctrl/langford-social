@@ -143,12 +143,14 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
       fbPostId: null,
       errorMessage: message,
     });
-    await sendPublishFailureAlert({
-      runDate,
-      weekdayKey: payload.weekday_key,
-      reason: "Publish failed",
-      errorMessage: message,
-    });
+    if (!existingRun || existingRun.status !== "failed") {
+      await sendPublishFailureAlert({
+        runDate,
+        weekdayKey: payload.weekday_key,
+        reason: "Publish failed",
+        errorMessage: message,
+      });
+    }
 
     return {
       status: "failed",
