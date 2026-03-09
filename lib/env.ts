@@ -30,6 +30,10 @@ type RuntimeEnv = {
   ALERT_WEBHOOK_URL?: string;
 };
 
+type DiscordEnv = {
+  DISCORD_INTERACTIONS_PUBLIC_KEY?: string;
+};
+
 type MetaRefreshEnv = {
   META_APP_ID?: string;
   META_APP_SECRET?: string;
@@ -101,5 +105,11 @@ export function getMetaRefreshEnv(): MetaRefreshEnv {
   return {
     META_APP_ID: process.env.META_APP_ID?.trim() || undefined,
     META_APP_SECRET: process.env.META_APP_SECRET?.trim() || undefined,
+  };
+}
+
+export function getDiscordEnv(): DiscordEnv {
+  return {
+    DISCORD_INTERACTIONS_PUBLIC_KEY: process.env.DISCORD_INTERACTIONS_PUBLIC_KEY?.trim() || undefined,
   };
 }

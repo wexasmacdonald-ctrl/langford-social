@@ -40,6 +40,7 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
 - `PUBLIC_BASE_URL` (must be `https://` in production)
 - `DRY_RUN` (`true` disables real Instagram publishing and records `skipped`)
 - `ALERT_WEBHOOK_URL` (optional; receives JSON alert on publish failures for IG/FB)
+- `DISCORD_INTERACTIONS_PUBLIC_KEY` (optional; enables `/retrytoday` Discord slash command)
 
 ## API Endpoints
 
@@ -57,6 +58,8 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
   - Clears all historical run records (useful after testing to avoid date clashes).
 - `POST /api/tokens/refresh`
   - Forces Meta token refresh and stores new tokens in `api_tokens`.
+- `POST /api/discord/interactions`
+  - Discord interactions endpoint for `/retrytoday` command (signed requests only).
 - `GET|POST /api/queue`
   - Deprecated (manual queue removed).
 - `GET|POST /api/cron/queue-today`
@@ -92,3 +95,18 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
 - Facebook publish requires `FB_PAGE_ID` and a valid token in `api_tokens(provider='facebook')` (or env fallback).
 - If `META_APP_ID` and `META_APP_SECRET` are set, tokens are refreshed automatically during publish runs.
 - Before go-live, set `DRY_RUN=true` for safe end-to-end testing, then switch to `false`.
+
+## Discord Retry Command (Optional)
+
+You can trigger a retry from Discord with a slash command:
+
+1. In Discord Developer Portal for your app:
+   - Set **Interactions Endpoint URL** to `https://<your-domain>/api/discord/interactions`
+   - Create slash command: `/retrytoday`
+   - Optional command options:
+     - `date` (string `YYYY-MM-DD`)
+     - `force` (boolean, default true)
+2. Copy Discord app **Public Key** to `DISCORD_INTERACTIONS_PUBLIC_KEY`.
+3. Redeploy.
+
+Running `/retrytoday` will queue a manual publish retry and return an ephemeral confirmation.
