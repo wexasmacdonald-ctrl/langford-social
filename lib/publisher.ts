@@ -176,7 +176,7 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
     const instagramAccessToken = await getInstagramAccessToken();
     const facebookAccessToken = await getFacebookAccessToken();
     try {
-      igMediaId = await withRetry(() => publishScheduledPayload(payload, instagramAccessToken), 3);
+      igMediaId = await withRetry(() => publishScheduledPayload(payload, instagramAccessToken), 2);
     } catch (error) {
       const igMessage = stringifyError(error);
       throw new Error(`Instagram publish failed: ${igMessage}`);

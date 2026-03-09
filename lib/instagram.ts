@@ -59,7 +59,7 @@ export async function waitForMediaReady(
   options?: { timeoutMs?: number; pollMs?: number },
 ): Promise<void> {
   const timeoutMs = options?.timeoutMs ?? 90_000;
-  const pollMs = options?.pollMs ?? 2_500;
+  const pollMs = options?.pollMs ?? 10_000;
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
