@@ -26,7 +26,6 @@ const TRANSIENT_ERROR_PATTERNS = [
   "temporarily unavailable",
   "timeout",
   "timed out",
-  "rate limit",
   "service unavailable",
   "connection reset",
   "econnreset",
@@ -49,6 +48,14 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function isRateLimitedError(message: string | null | undefined): boolean {
+  if (!message) {
+    return false;
+  }
+  const normalized = message.toLowerCase();
+  return normalized.includes("application request limit reached") || normalized.includes("rate limit");
 }
 
 async function withRetry<T>(operation: () => Promise<T>, maxAttempts: number): Promise<T> {
@@ -102,6 +109,26 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
   const existingRun = await hasRunForDate(runDate);
   let igMediaId: string | null = null;
 
+  if (
+    existingRun &&
+    !input.force &&
+    input.mode === "cron" &&
+    existingRun.status === "failed" &&
+    isRateLimitedError(existingRun.error_message)
+  ) {
+    return {
+      status: "skipped",
+      run_date: runDate,
+      weekday_key: existingRun.weekday_key,
+      reason: `Rate-limited earlier for ${runDate}; waiting for manual retry`,
+      ig_media_id: existingRun.ig_media_id,
+      fb_post_id: existingRun.fb_post_id,
+      error_message: existingRun.error_message,
+      payload: null,
+      existing_run: existingRun,
+    };
+  }
+
   const shouldSkipForExistingRun = existingRun && !input.force && existingRun.status === "posted";
   if (shouldSkipForExistingRun) {
     return {
@@ -143,7 +170,9 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
   }
 
   try {
-    await refreshMetaTokens();
+    if (!existingRun) {
+      await refreshMetaTokens();
+    }
     const instagramAccessToken = await getInstagramAccessToken();
     const facebookAccessToken = await getFacebookAccessToken();
     try {
