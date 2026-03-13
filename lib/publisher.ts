@@ -8,7 +8,6 @@ import {
   createCarouselItemContainer,
   createMediaContainer,
   publishMediaContainer,
-  waitForMediaReady,
 } from "@/lib/instagram";
 import { getFacebookAccessToken, getInstagramAccessToken } from "@/lib/tokens";
 import { sendPublishFailureAlert } from "@/lib/alerts";
@@ -58,6 +57,16 @@ function isRateLimitedError(message: string | null | undefined): boolean {
   return normalized.includes("application request limit reached") || normalized.includes("rate limit");
 }
 
+function isMediaNotReadyError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("media id is not available") ||
+    normalized.includes("media is not ready") ||
+    normalized.includes("still being processed") ||
+    normalized.includes("please wait")
+  );
+}
+
 async function withRetry<T>(operation: () => Promise<T>, maxAttempts: number): Promise<T> {
   let attempt = 0;
   let lastError: unknown = null;
@@ -80,6 +89,32 @@ async function withRetry<T>(operation: () => Promise<T>, maxAttempts: number): P
   throw lastError instanceof Error ? lastError : new Error("Retry failed");
 }
 
+async function publishContainerWithRetry(
+  creationId: string,
+  accessToken: string,
+  maxAttempts = 3,
+): Promise<string> {
+  let attempt = 0;
+  let lastError: unknown = null;
+
+  while (attempt < maxAttempts) {
+    attempt += 1;
+    try {
+      return await publishMediaContainer(creationId, accessToken);
+    } catch (error) {
+      lastError = error;
+      const message = stringifyError(error);
+      if (attempt >= maxAttempts || !isMediaNotReadyError(message)) {
+        throw error;
+      }
+
+      await delay(attempt * 6000);
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Media publish retry failed");
+}
+
 async function publishScheduledPayload(payload: { media_urls: string[]; caption: string }, accessToken: string): Promise<string> {
   if (payload.media_urls.length === 0) {
     throw new Error("Scheduled payload has no media URLs");
@@ -87,20 +122,18 @@ async function publishScheduledPayload(payload: { media_urls: string[]; caption:
 
   if (payload.media_urls.length === 1) {
     const creationId = await createMediaContainer(payload.media_urls[0], accessToken, payload.caption);
-    await waitForMediaReady(creationId, accessToken);
-    return publishMediaContainer(creationId, accessToken);
+    return publishContainerWithRetry(creationId, accessToken);
   }
 
   const childIds: string[] = [];
   for (const imageUrl of payload.media_urls) {
     const childId = await createCarouselItemContainer(imageUrl, accessToken);
-    await waitForMediaReady(childId, accessToken);
     childIds.push(childId);
+    await delay(500);
   }
 
   const carouselId = await createCarouselContainer(childIds, accessToken, payload.caption);
-  await waitForMediaReady(carouselId, accessToken);
-  return publishMediaContainer(carouselId, accessToken);
+  return publishContainerWithRetry(carouselId, accessToken);
 }
 
 export async function runScheduledPublish(input: RunScheduledPublishInput): Promise<ScheduledPublishResult> {
