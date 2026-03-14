@@ -191,14 +191,14 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
     const instagramAccessToken = await getInstagramAccessToken();
     const facebookAccessToken = await getFacebookAccessToken();
     try {
-      igMediaId = await withRetry(() => publishScheduledPayload(payload, instagramAccessToken), 1);
+      igMediaId = await withRetry(() => publishScheduledPayload(payload, instagramAccessToken), 2);
     } catch (error) {
       const igMessage = stringifyError(error);
       throw new Error(`Instagram publish failed: ${igMessage}`);
     }
     let fbPostId: string;
     try {
-      fbPostId = await withRetry(() => publishFacebookPost(payload.media_urls, payload.caption, facebookAccessToken), 1);
+      fbPostId = await withRetry(() => publishFacebookPost(payload.media_urls, payload.caption, facebookAccessToken), 2);
     } catch (error) {
       const fbMessage = stringifyError(error);
       throw new Error(`Facebook publish failed: ${fbMessage}`);
