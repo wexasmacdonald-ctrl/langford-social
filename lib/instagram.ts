@@ -23,7 +23,10 @@ type MediaStatusResponse = {
 } & GraphApiError;
 
 function extractGraphError(payload: GraphApiError): string {
-  return payload.error?.message ?? "Instagram Graph API request failed";
+  const message = payload.error?.message ?? "Instagram Graph API request failed";
+  const code = payload.error?.code ? ` (code=${payload.error.code}` : "";
+  const type = payload.error?.type ? ` type=${payload.error.type})` : code ? ")" : "";
+  return `${message}${code}${type}`;
 }
 
 async function getMediaStatus(creationId: string, accessToken: string): Promise<MediaStatusResponse> {
@@ -88,7 +91,6 @@ export async function createMediaContainer(imageUrl: string, accessToken: string
   const body = new URLSearchParams({
     image_url: imageUrl,
     caption: caption ?? "",
-    is_published: "false",
     access_token: accessToken,
   });
 

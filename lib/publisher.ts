@@ -78,7 +78,7 @@ async function withRetry<T>(operation: () => Promise<T>, maxAttempts: number): P
     } catch (error) {
       lastError = error;
       const message = stringifyError(error);
-      if (attempt >= maxAttempts || !isTransientError(message)) {
+      if (attempt >= maxAttempts || !isTransientError(message) || isRateLimitedError(message)) {
         throw error;
       }
       const backoffMs = attempt * 4000;
@@ -104,7 +104,7 @@ async function publishContainerWithRetry(
     } catch (error) {
       lastError = error;
       const message = stringifyError(error);
-      if (attempt >= maxAttempts || !isMediaNotReadyError(message)) {
+      if (attempt >= maxAttempts || !isMediaNotReadyError(message) || isRateLimitedError(message)) {
         throw error;
       }
 
@@ -141,26 +141,6 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
   const runDate = input.dateKey ?? getRunDateForNow();
   const existingRun = await hasRunForDate(runDate);
   let igMediaId: string | null = null;
-
-  if (
-    existingRun &&
-    !input.force &&
-    input.mode === "cron" &&
-    existingRun.status === "failed" &&
-    isRateLimitedError(existingRun.error_message)
-  ) {
-    return {
-      status: "skipped",
-      run_date: runDate,
-      weekday_key: existingRun.weekday_key,
-      reason: `Rate-limited earlier for ${runDate}; waiting for manual retry`,
-      ig_media_id: existingRun.ig_media_id,
-      fb_post_id: existingRun.fb_post_id,
-      error_message: existingRun.error_message,
-      payload: null,
-      existing_run: existingRun,
-    };
-  }
 
   const shouldSkipForExistingRun = existingRun && !input.force && existingRun.status === "posted";
   if (shouldSkipForExistingRun) {
@@ -203,20 +183,22 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
   }
 
   try {
-    if (!existingRun) {
+    try {
       await refreshMetaTokens();
+    } catch (refreshError) {
+      console.warn("Token refresh failed, continuing with existing token:", stringifyError(refreshError));
     }
     const instagramAccessToken = await getInstagramAccessToken();
     const facebookAccessToken = await getFacebookAccessToken();
     try {
-      igMediaId = await withRetry(() => publishScheduledPayload(payload, instagramAccessToken), 2);
+      igMediaId = await withRetry(() => publishScheduledPayload(payload, instagramAccessToken), 1);
     } catch (error) {
       const igMessage = stringifyError(error);
       throw new Error(`Instagram publish failed: ${igMessage}`);
     }
     let fbPostId: string;
     try {
-      fbPostId = await withRetry(() => publishFacebookPost(payload.media_urls, payload.caption, facebookAccessToken), 2);
+      fbPostId = await withRetry(() => publishFacebookPost(payload.media_urls, payload.caption, facebookAccessToken), 1);
     } catch (error) {
       const fbMessage = stringifyError(error);
       throw new Error(`Facebook publish failed: ${fbMessage}`);
