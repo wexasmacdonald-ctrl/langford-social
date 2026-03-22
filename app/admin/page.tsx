@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { PublishRunRow, ScheduledPostPayload, ScheduledPublishResult } from "@/lib/types";
+import type { PublishRunRow, ScheduledPostPayload, ScheduledPublishResult, ScheduledTemplateRow } from "@/lib/types";
 
 type PreviewResponse = {
   ok: boolean;
@@ -17,6 +17,10 @@ type ClearRunResponse = {
   ok: boolean;
   run_date: string;
   deleted: boolean;
+};
+
+type TemplatesResponse = {
+  templates: ScheduledTemplateRow[];
 };
 
 type ErrorResponse = {
@@ -68,6 +72,8 @@ export default function AdminPage() {
   const [isDryRun, setIsDryRun] = useState<boolean | null>(null);
   const [hasAlertWebhook, setHasAlertWebhook] = useState<boolean | null>(null);
   const [isFacebookConfigured, setIsFacebookConfigured] = useState<boolean | null>(null);
+  const [templates, setTemplates] = useState<ScheduledTemplateRow[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isLoadingRuns, setIsLoadingRuns] = useState(false);
   const [isPublishingDate, setIsPublishingDate] = useState(false);
@@ -84,6 +90,26 @@ export default function AdminPage() {
       return { Authorization: `Bearer ${secret.trim()}` };
     }
     return {};
+  }
+
+  async function loadTemplates() {
+    setIsLoadingTemplates(true);
+    try {
+      const response = await fetch("/api/schedule/templates", {
+        headers: buildHeaders(),
+        cache: "no-store",
+      });
+      const data = (await response.json()) as TemplatesResponse & ErrorResponse;
+      if (!response.ok) {
+        throw new Error(data.error?.message ?? "Failed to load templates");
+      }
+      setTemplates(data.templates);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to load templates";
+      setStatusMessage(message);
+    } finally {
+      setIsLoadingTemplates(false);
+    }
   }
 
   async function loadPublishRuns() {
@@ -227,7 +253,7 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    void Promise.all([loadPreview(simulationDate), loadPublishRuns(), loadRuntimeStatus()]);
+    void Promise.all([loadPreview(simulationDate), loadPublishRuns(), loadRuntimeStatus(), loadTemplates()]);
   }, []);
 
   return (
@@ -269,6 +295,42 @@ export default function AdminPage() {
           {isFacebookConfigured === null ? "Unknown" : isFacebookConfigured ? "Configured" : "Missing FB vars"}
         </span>
       </div>
+
+      <section style={{ background: "#fff", border: "1px solid #ddd", padding: 16, marginBottom: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Weekly Post Schedule</h2>
+        {isLoadingTemplates ? (
+          <p>Loading templates...</p>
+        ) : templates.length === 0 ? (
+          <p>No templates configured.</p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 600 }}>
+              <thead>
+                <tr>
+                  <th align="left" style={{ padding: "8px 12px", borderBottom: "2px solid #ddd" }}>Day</th>
+                  <th align="left" style={{ padding: "8px 12px", borderBottom: "2px solid #ddd" }}>Title (EN)</th>
+                  <th align="left" style={{ padding: "8px 12px", borderBottom: "2px solid #ddd" }}>Title (FR)</th>
+                  <th align="center" style={{ padding: "8px 12px", borderBottom: "2px solid #ddd" }}>Daily Special</th>
+                  <th align="center" style={{ padding: "8px 12px", borderBottom: "2px solid #ddd" }}>Images</th>
+                  <th align="center" style={{ padding: "8px 12px", borderBottom: "2px solid #ddd" }}>Active</th>
+                </tr>
+              </thead>
+              <tbody>
+                {templates.map((t) => (
+                  <tr key={t.weekday_key} style={{ borderBottom: "1px solid #eee" }}>
+                    <td style={{ padding: "8px 12px", fontWeight: 600, textTransform: "capitalize" }}>{t.weekday_key}</td>
+                    <td style={{ padding: "8px 12px" }}>{t.title_en}</td>
+                    <td style={{ padding: "8px 12px" }}>{t.title_fr}</td>
+                    <td align="center" style={{ padding: "8px 12px" }}>{t.is_daily_special ? "Yes" : "No"}</td>
+                    <td align="center" style={{ padding: "8px 12px" }}>{t.media_urls.length}</td>
+                    <td align="center" style={{ padding: "8px 12px" }}>{t.active ? "Yes" : "No"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section style={{ background: "#fff", border: "1px solid #ddd", padding: 16, marginBottom: 16 }}>
         <h2 style={{ marginTop: 0 }}>Controls</h2>
