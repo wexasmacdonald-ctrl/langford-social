@@ -161,14 +161,20 @@ async function ensureSchemaExtensions(): Promise<void> {
     await sql`
       INSERT INTO scheduled_templates (weekday_key, title_en, title_fr, media_urls, is_daily_special, sort_order, active)
       VALUES
-        ('monday', 'Hamburger Platter', 'Assiette hamburger', '["/images/hamburger-platter.png","/images/pizza-pepperoni.png","/images/breakfast-deal.png"]'::jsonb, true, 1, true),
-        ('tuesday', 'Smoked Meat Platter', 'Assiette sandwich à la viande fumée', '["/images/smoked-meat-platter.png","/images/pizza-pepperoni.png","/images/breakfast-deal.png"]'::jsonb, true, 2, true),
-        ('wednesday', '8 Chicken Wings Platter', 'Assiette 8 ailes de poulet', '["/images/chicken-wings-platter.png","/images/pizza-pepperoni.png","/images/breakfast-deal.png","/images/bogo-pizza.jpg"]'::jsonb, true, 3, true),
-        ('thursday', 'Chicken Finger Platter', 'Assiette doigts de poulet', '["/images/chicken-finger-platter.png","/images/pizza-pepperoni.png","/images/breakfast-deal.png","/images/bogo-pizza.jpg"]'::jsonb, true, 4, true),
-        ('friday', 'Fish & Chips', 'Fish et frites', '["/images/fish-and-chips.png","/images/pizza-pepperoni.png","/images/breakfast-deal.png","/images/bogo-pizza.jpg"]'::jsonb, true, 5, true),
-        ('saturday', 'Weekend Deals', 'Promotions du week-end', '["/images/pizza-pepperoni.png","/images/breakfast-deal.png"]'::jsonb, false, 6, true),
-        ('sunday', 'Weekend Deals', 'Promotions du week-end', '["/images/pizza-pepperoni.png","/images/breakfast-deal.png"]'::jsonb, false, 7, true)
-      ON CONFLICT (weekday_key) DO NOTHING
+        ('monday', 'Hamburger Platter', 'Assiette hamburger', '["/images/hamburger-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, true, 1, true),
+        ('tuesday', 'Smoked Meat Platter', 'Assiette sandwich à la viande fumée', '["/images/smoked-meat-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, true, 2, true),
+        ('wednesday', '8 Chicken Wings Platter', 'Assiette 8 ailes de poulet', '["/images/chicken-wings-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg","/images/bogo-pizza.jpg"]'::jsonb, true, 3, true),
+        ('thursday', 'Chicken Finger Platter', 'Assiette doigts de poulet', '["/images/chicken-finger-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg","/images/bogo-pizza.jpg"]'::jsonb, true, 4, true),
+        ('friday', 'Fish & Chips', 'Fish et frites', '["/images/fish-and-chips.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg","/images/bogo-pizza.jpg"]'::jsonb, true, 5, true),
+        ('saturday', 'Weekend Deals', 'Promotions du week-end', '["/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, false, 6, true),
+        ('sunday', 'Weekend Deals', 'Promotions du week-end', '["/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, false, 7, true)
+      ON CONFLICT (weekday_key) DO UPDATE SET
+        title_en = EXCLUDED.title_en,
+        title_fr = EXCLUDED.title_fr,
+        media_urls = EXCLUDED.media_urls,
+        is_daily_special = EXCLUDED.is_daily_special,
+        sort_order = EXCLUDED.sort_order,
+        active = EXCLUDED.active
     `;
   })();
 
@@ -333,3 +339,4 @@ export async function getAllPosts(): Promise<PostRow[]> {
   `;
   return (rows as Record<string, unknown>[]).map(normalizePostRow);
 }
+

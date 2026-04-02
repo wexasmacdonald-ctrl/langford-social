@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { getPublishRunByDate, getScheduledTemplateByWeekday } from "@/lib/db";
 import { getScheduleEnv } from "@/lib/env";
 import type {
@@ -76,12 +78,49 @@ function asDateFromDateKey(dateKey: string): Date {
   return new Date(`${dateKey}T12:00:00.000Z`);
 }
 
-function buildAbsoluteMediaUrl(value: string): string {
+function normalizeScheduledMediaReference(value: string): string {
+  if (!/\.png(?:$|[?#])/i.test(value)) {
+    return value;
+  }
+
   if (/^https?:\/\//i.test(value)) {
-    if (process.env.NODE_ENV === "production" && !/^https:\/\//i.test(value)) {
+    const url = new URL(value);
+    if (!url.pathname.startsWith("/images/")) {
+      return value;
+    }
+
+    const jpgPath = url.pathname.replace(/\.png$/i, ".jpg");
+    const localAssetPath = path.join(process.cwd(), "public", jpgPath.replace(/^\//, ""));
+    if (!existsSync(localAssetPath)) {
+      return value;
+    }
+
+    url.pathname = jpgPath;
+    return url.toString();
+  }
+
+  const normalizedPath = value.startsWith("/") ? value : `/${value}`;
+  if (!normalizedPath.startsWith("/images/")) {
+    return value;
+  }
+
+  const jpgPath = normalizedPath.replace(/\.png$/i, ".jpg");
+  const localAssetPath = path.join(process.cwd(), "public", jpgPath.replace(/^\//, ""));
+  if (!existsSync(localAssetPath)) {
+    return value;
+  }
+
+  return value.startsWith("/") ? jpgPath : jpgPath.replace(/^\//, "");
+}
+
+function buildAbsoluteMediaUrl(value: string): string {
+  const normalizedValue = normalizeScheduledMediaReference(value);
+
+  if (/^https?:\/\//i.test(normalizedValue)) {
+    if (process.env.NODE_ENV === "production" && !/^https:\/\//i.test(normalizedValue)) {
       throw new Error("Scheduled template media URLs must use https in production.");
     }
-    return value;
+    return normalizedValue;
   }
 
   const env = getScheduleEnv();
@@ -90,8 +129,8 @@ function buildAbsoluteMediaUrl(value: string): string {
     throw new Error("PUBLIC_BASE_URL must use https in production.");
   }
 
-  const path = value.startsWith("/") ? value : `/${value}`;
-  return `${base}${path}`;
+  const normalizedPath = normalizedValue.startsWith("/") ? normalizedValue : `/${normalizedValue}`;
+  return `${base}${normalizedPath}`;
 }
 
 function buildBilingualCaption(template: ScheduledTemplateRow): string {
