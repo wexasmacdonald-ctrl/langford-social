@@ -5,6 +5,7 @@ import { getBearerToken, jsonError } from "@/lib/http";
 import { runScheduledPublish } from "@/lib/publisher";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 function isAuthorized(request: Request): boolean {
   if (process.env.NODE_ENV !== "production") {

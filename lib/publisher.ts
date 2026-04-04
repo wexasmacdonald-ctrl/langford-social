@@ -8,6 +8,7 @@ import {
   createCarouselItemContainer,
   createMediaContainer,
   publishMediaContainer,
+  waitForMediaReady,
 } from "@/lib/instagram";
 import { getFacebookAccessToken, getInstagramAccessToken } from "@/lib/tokens";
 import { sendPublishFailureAlert } from "@/lib/alerts";
@@ -67,9 +68,15 @@ function isMediaNotReadyError(message: string): boolean {
   );
 }
 
-async function withRetry<T>(operation: () => Promise<T>, maxAttempts: number): Promise<T> {
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxAttempts: number,
+  options?: { baseDelayMs?: number; maxDelayMs?: number },
+): Promise<T> {
   let attempt = 0;
   let lastError: unknown = null;
+  const baseDelayMs = options?.baseDelayMs ?? 4000;
+  const maxDelayMs = options?.maxDelayMs ?? 30000;
 
   while (attempt < maxAttempts) {
     attempt += 1;
@@ -81,7 +88,7 @@ async function withRetry<T>(operation: () => Promise<T>, maxAttempts: number): P
       if (attempt >= maxAttempts || !isTransientError(message) || isRateLimitedError(message)) {
         throw error;
       }
-      const backoffMs = attempt * 4000;
+      const backoffMs = Math.min(maxDelayMs, attempt * baseDelayMs);
       await delay(backoffMs);
     }
   }
@@ -92,7 +99,7 @@ async function withRetry<T>(operation: () => Promise<T>, maxAttempts: number): P
 async function publishContainerWithRetry(
   creationId: string,
   accessToken: string,
-  maxAttempts = 3,
+  maxAttempts = 4,
 ): Promise<string> {
   let attempt = 0;
   let lastError: unknown = null;
@@ -104,11 +111,12 @@ async function publishContainerWithRetry(
     } catch (error) {
       lastError = error;
       const message = stringifyError(error);
-      if (attempt >= maxAttempts || !isMediaNotReadyError(message) || isRateLimitedError(message)) {
+      const retryable = isMediaNotReadyError(message) || isTransientError(message);
+      if (attempt >= maxAttempts || !retryable || isRateLimitedError(message)) {
         throw error;
       }
 
-      await delay(attempt * 6000);
+      await delay(Math.min(30000, attempt * 10000));
     }
   }
 
@@ -122,17 +130,20 @@ async function publishScheduledPayload(payload: { media_urls: string[]; caption:
 
   if (payload.media_urls.length === 1) {
     const creationId = await createMediaContainer(payload.media_urls[0], accessToken, payload.caption);
+    await waitForMediaReady(creationId, accessToken, { timeoutMs: 120_000, pollMs: 5000 });
     return publishContainerWithRetry(creationId, accessToken);
   }
 
   const childIds: string[] = [];
   for (const imageUrl of payload.media_urls) {
     const childId = await createCarouselItemContainer(imageUrl, accessToken);
+    await waitForMediaReady(childId, accessToken, { timeoutMs: 120_000, pollMs: 5000 });
     childIds.push(childId);
-    await delay(500);
+    await delay(1500);
   }
 
   const carouselId = await createCarouselContainer(childIds, accessToken, payload.caption);
+  await waitForMediaReady(carouselId, accessToken, { timeoutMs: 120_000, pollMs: 5000 });
   return publishContainerWithRetry(carouselId, accessToken);
 }
 
@@ -191,14 +202,20 @@ export async function runScheduledPublish(input: RunScheduledPublishInput): Prom
     const instagramAccessToken = await getInstagramAccessToken();
     const facebookAccessToken = await getFacebookAccessToken();
     try {
-      igMediaId = await withRetry(() => publishScheduledPayload(payload, instagramAccessToken), 2);
+      igMediaId = await withRetry(() => publishScheduledPayload(payload, instagramAccessToken), 4, {
+        baseDelayMs: 15000,
+        maxDelayMs: 45000,
+      });
     } catch (error) {
       const igMessage = stringifyError(error);
       throw new Error(`Instagram publish failed: ${igMessage}`);
     }
     let fbPostId: string;
     try {
-      fbPostId = await withRetry(() => publishFacebookPost(payload.media_urls, payload.caption, facebookAccessToken), 2);
+      fbPostId = await withRetry(() => publishFacebookPost(payload.media_urls, payload.caption, facebookAccessToken), 3, {
+        baseDelayMs: 10000,
+        maxDelayMs: 30000,
+      });
     } catch (error) {
       const fbMessage = stringifyError(error);
       throw new Error(`Facebook publish failed: ${fbMessage}`);
