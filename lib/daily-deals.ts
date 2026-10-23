@@ -158,11 +158,6 @@ function buildBilingualCaption(template: ScheduledTemplateRow): string {
   frenchLines.push('- Pizza 9" de votre choix + breuvage 355ml - 10,44 $');
   frenchLines.push("- BLT ou Burger déjeuner: 1 pour 4,99 $ | 2 pour 8,00 $");
 
-  if (weekday === "wednesday" || weekday === "thursday" || weekday === "friday") {
-    englishLines.push('- 2-for-1 14" Pepperoni & Cheese Pizza - $22.61');
-    frenchLines.push('- 2 pour 1 pizza pepperoni et fromage 14" - 22,61 $');
-  }
-
   englishLines.push("");
   englishLines.push("Call for pickup (+1 819-647-2933)");
 

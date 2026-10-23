@@ -163,9 +163,9 @@ async function ensureSchemaExtensions(): Promise<void> {
       VALUES
         ('monday', 'Hamburger Platter', 'Assiette hamburger', '["/images/hamburger-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, true, 1, true),
         ('tuesday', 'Smoked Meat Platter', 'Assiette sandwich à la viande fumée', '["/images/smoked-meat-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, true, 2, true),
-        ('wednesday', '8 Chicken Wings Platter', 'Assiette 8 ailes de poulet', '["/images/chicken-wings-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg","/images/bogo-pizza.jpg"]'::jsonb, true, 3, true),
-        ('thursday', 'Chicken Finger Platter', 'Assiette doigts de poulet', '["/images/chicken-finger-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg","/images/bogo-pizza.jpg"]'::jsonb, true, 4, true),
-        ('friday', 'Fish & Chips', 'Fish et frites', '["/images/fish-and-chips.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg","/images/bogo-pizza.jpg"]'::jsonb, true, 5, true),
+        ('wednesday', '8 Chicken Wings Platter', 'Assiette 8 ailes de poulet', '["/images/chicken-wings-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, true, 3, true),
+        ('thursday', 'Chicken Finger Platter', 'Assiette doigts de poulet', '["/images/chicken-finger-platter.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, true, 4, true),
+        ('friday', 'Fish & Chips', 'Fish et frites', '["/images/fish-and-chips.jpg","/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, true, 5, true),
         ('saturday', 'Weekend Deals', 'Promotions du week-end', '["/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, false, 6, true),
         ('sunday', 'Weekend Deals', 'Promotions du week-end', '["/images/pizza-pepperoni.jpg","/images/breakfast-deal.jpg"]'::jsonb, false, 7, true)
       ON CONFLICT (weekday_key) DO UPDATE SET

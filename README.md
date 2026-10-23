@@ -84,7 +84,6 @@ Recurring Instagram + Facebook autoposter for daily restaurant specials.
   - Slide 1: daily special
   - Slide 2: 9" pizza
   - Slide 3: BLT/breakfast
-  - Slide 4: 2-for-1 14" pepperoni & cheese
 - Saturday/Sunday:
   - Slide 1: 9" pizza
   - Slide 2: BLT/breakfast
