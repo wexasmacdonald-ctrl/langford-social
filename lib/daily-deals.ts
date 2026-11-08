@@ -151,11 +151,11 @@ function buildBilingualCaption(template: ScheduledTemplateRow): string {
   }
 
   englishLines.push("Everyday Deals:");
-  englishLines.push('- 9" Pizza of Your Choice + 355ml drink - $10.44');
+  englishLines.push('- 9" Pepperoni Pizza + 355ml drink - $10.44 (+$0.50 per extra topping)');
   englishLines.push("- BLT or Breakfast Burger: 1 for $4.99 | 2 for $8.00");
 
   frenchLines.push("Promotions quotidiennes:");
-  frenchLines.push('- Pizza 9" de votre choix + breuvage 355ml - 10,44 $');
+  frenchLines.push('- Pizza pepperoni 9" + breuvage 355ml - 10,44 $ (+0,50 $ par garniture supplémentaire)');
   frenchLines.push("- BLT ou Burger déjeuner: 1 pour 4,99 $ | 2 pour 8,00 $");
 
   englishLines.push("");
